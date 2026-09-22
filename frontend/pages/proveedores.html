@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proveedores - Sistema IA</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/formularios.css">
+</head>
+
+<body>
+    <div id="navbar-container"></div>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1>Gestión de Proveedores</h1>
+                    <p class="subtitle">Registra y administra los proveedores disponibles para evaluación.</p>
+                </div>
+                <button class="btn btn-primary" id="btn-nuevo-proveedor">+ Nuevo Proveedor</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Listado de proveedores</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Razón social</th>
+                                <th>RUC</th>
+                                <th>Ciudad</th>
+                                <th>Contacto</th>
+                                <th>Estado</th>
+                                <th class="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="proveedores-body">
+                            <tr><td colspan="6"><div class="loading-state"><div class="spinner"></div><span>Cargando proveedores...</span></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="chat-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/components/navbar.js"></script>
+    <script src="../js/components/sidebar.js"></script>
+    <script src="../js/components/modal.js"></script>
+    <script src="../js/components/chat.js"></script>
+    <script src="../js/proveedores.js"></script>
+</body>
+
+</html>

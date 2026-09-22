@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Inteligente de Evaluación de Proveedores</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+
+<body>
+    <div id="navbar-container"></div>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <h1>Sistema Inteligente Agéntico para la Evaluación y Selección de Proveedores</h1>
+            <p>Bienvenido al sistema de apoyo a la decisión para la evaluación multicriterio de proveedores mediante IA.
+            </p>
+
+            <div class="quick-links">
+                <a href="pages/dashboard.html" class="card-link">Dashboard General</a>
+                <a href="pages/proveedores.html" class="card-link">Gestión de Proveedores</a>
+                <a href="pages/productos.html" class="card-link">Gestión de Productos</a>
+                <a href="pages/desempeno.html" class="card-link">Historial de Desempeño</a>
+                <a href="pages/evaluaciones.html" class="card-link">Evaluaciones & Recomendaciones</a>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="chat-container"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/components/navbar.js"></script>
+    <script src="js/components/sidebar.js"></script>
+    <script src="js/components/modal.js"></script>
+    <script src="js/components/chat.js"></script>
+</body>
+
+</html>

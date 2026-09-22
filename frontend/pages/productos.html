@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos - Sistema IA</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/formularios.css">
+</head>
+
+<body>
+    <div id="navbar-container"></div>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1>Gestión de Productos</h1>
+                    <p class="subtitle">Administra el catálogo de productos evaluables del sistema.</p>
+                </div>
+                <button class="btn btn-primary" id="btn-nuevo-producto">+ Nuevo Producto</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Catálogo de productos</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th class="text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productos-body">
+                            <tr><td colspan="5"><div class="loading-state"><div class="spinner"></div><span>Cargando productos...</span></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="chat-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/components/navbar.js"></script>
+    <script src="../js/components/sidebar.js"></script>
+    <script src="../js/components/modal.js"></script>
+    <script src="../js/components/chat.js"></script>
+    <script src="../js/productos.js"></script>
+</body>
+
+</html>

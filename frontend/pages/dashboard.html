@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Evaluación de Proveedores</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+
+<body>
+    <div id="navbar-container"></div>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1>Dashboard General</h1>
+                    <p class="subtitle">Panorama del sistema de evaluación y selección de proveedores.</p>
+                </div>
+                <div class="dashboard-actions">
+                    <a href="evaluaciones.html" class="btn btn-primary">+ Nueva Evaluación</a>
+                </div>
+            </div>
+
+            <div class="kpi-grid" id="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 21v-6h6v6"></path></svg>
+                    </div>
+                    <div class="kpi-label">Proveedores activos</div>
+                    <div class="kpi-value" id="kpi-proveedores">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path></svg>
+                    </div>
+                    <div class="kpi-label">Productos en catálogo</div>
+                    <div class="kpi-value" id="kpi-productos">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"></path><path d="M7 15l4-5 3 3 5-7"></path></svg>
+                    </div>
+                    <div class="kpi-label">Cumplimiento histórico prom.</div>
+                    <div class="kpi-value" id="kpi-cumplimiento">—</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    </div>
+                    <div class="kpi-label">Evaluaciones procesadas</div>
+                    <div class="kpi-value" id="kpi-evaluaciones">—</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>Últimas evaluaciones</h2>
+                    <a href="evaluaciones.html" class="btn btn-ghost btn-sm">Ver todas</a>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Evaluación</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Proveedor recomendado</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-evaluations-body">
+                            <tr><td colspan="5"><div class="loading-state"><div class="spinner"></div><span>Cargando datos...</span></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="chat-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/components/navbar.js"></script>
+    <script src="../js/components/sidebar.js"></script>
+    <script src="../js/components/modal.js"></script>
+    <script src="../js/components/chat.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Evaluación - Sistema IA</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/formularios.css">
+    <link rel="stylesheet" href="../css/evaluaciones.css">
+</head>
+
+<body>
+    <div id="navbar-container"></div>
+    <div class="app-container">
+        <div id="sidebar-container"></div>
+        <main class="main-content">
+            <div class="page-header">
+                <div>
+                    <h1 id="detalle-titulo">Detalle de Evaluación</h1>
+                    <p class="subtitle" id="detalle-subtitulo">Cargando información de la evaluación…</p>
+                </div>
+                <div class="flex gap-sm">
+                    <button class="btn btn-secondary" id="btn-ver-compatibles">Proveedores compatibles</button>
+                    <a href="evaluaciones.html" class="btn btn-ghost">← Volver a evaluaciones</a>
+                </div>
+            </div>
+
+            <div id="detalle-content">
+                <div class="loading-state"><div class="spinner"></div><span>Cargando evaluación...</span></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="chat-container"></div>
+
+    <script src="../js/api.js"></script>
+    <script src="../js/components/navbar.js"></script>
+    <script src="../js/components/sidebar.js"></script>
+    <script src="../js/components/modal.js"></script>
+    <script src="../js/components/chat.js"></script>
+    <script src="../js/evaluacion-detalle.js"></script>
+</body>
+
+</html>

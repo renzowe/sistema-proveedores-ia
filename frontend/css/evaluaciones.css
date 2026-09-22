@@ -1,0 +1,196 @@
+/* ============================================================
+   Evaluaciones — formulario, priorización y detalle agéntico
+   ============================================================ */
+
+.priority-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.7rem;
+}
+
+.priority-option {
+    position: relative;
+}
+
+.priority-option input {
+    position: absolute;
+    opacity: 0;
+    inset: 0;
+    cursor: pointer;
+}
+
+.priority-option label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-panel);
+    cursor: pointer;
+    transition: border-color var(--transition), background var(--transition);
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.priority-option label strong {
+    color: var(--text-light);
+    font-size: 0.88rem;
+}
+
+.priority-option input:checked + label {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.16), rgba(34, 211, 238, 0.05));
+    color: var(--text-light);
+}
+
+/* ---------- Listado de evaluaciones ---------- */
+
+.eval-title-cell strong {
+    display: block;
+}
+
+.eval-title-cell span {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+}
+
+/* ---------- Detalle de evaluación ---------- */
+
+.recommended-banner {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(120deg, rgba(34, 197, 94, 0.14), rgba(99, 102, 241, 0.08));
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+}
+
+.recommended-banner .icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.18);
+    color: var(--success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.recommended-banner .icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.recommended-banner .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.recommended-banner .name {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.recommended-banner .score {
+    margin-left: auto;
+    text-align: right;
+}
+
+.recommended-banner .score .value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--success);
+}
+
+.score-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1.75rem;
+}
+
+.score-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.1rem;
+}
+
+.score-card .label {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.score-card .value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.score-bar-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--bg-panel);
+    overflow: hidden;
+}
+
+.score-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+
+.score-card.final .value {
+    color: var(--accent);
+}
+
+.ranking-table td.is-recommended {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.agent-dictamen {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.2rem;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-light);
+}
+
+.agent-dictamen + .agent-dictamen {
+    margin-top: 0.8rem;
+}
+
+.provider-tabs-nav {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.provider-tab-chip {
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-panel);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.provider-tab-chip.active {
+    border-color: var(--primary);
+    color: var(--text-light);
+    background: rgba(99, 102, 241, 0.16);
+}
