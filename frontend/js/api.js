@@ -3,10 +3,8 @@
    ============================================================ */
 
 // En local (localhost/127.0.0.1) apunta al backend local; en producción usa
-// la URL pública del backend desplegado en Render. Reemplaza el valor de
-// PRODUCTION_API_URL por la URL real que te asigne Render al crear el
-// Web Service (ej: 'https://sistema-proveedores-ia-api.onrender.com').
-const PRODUCTION_API_URL = 'https://TU-BACKEND.onrender.com';
+// la URL pública del backend desplegado en Render.
+const PRODUCTION_API_URL = 'https://sistema-proveedores-ia.onrender.com';
 const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 const API_ROOT_URL = isLocalHost ? 'http://localhost:8000' : PRODUCTION_API_URL;
 const API_BASE_URL = `${API_ROOT_URL}/api/v1`;
