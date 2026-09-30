@@ -4,73 +4,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historial de Desempeño - Sistema IA</title>
+    <title>Desempeño - Sistema IA</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/formularios.css">
 </head>
 
 <body>
-    <div id="navbar-container"></div>
-    <div class="app-container">
+    <div class="app-shell">
         <div id="sidebar-container"></div>
-        <main class="main-content">
-            <div class="page-header">
-                <div>
-                    <h1>Historial de Desempeño</h1>
-                    <p class="subtitle">Antecedentes históricos de cumplimiento y calidad por proveedor.</p>
+        <div class="app-main">
+            <div id="navbar-container"></div>
+            <main class="content-area">
+                <div class="page-header">
+                    <div>
+                        <div class="eyebrow">Procurement</div>
+                        <h1>Desempeño de proveedores</h1>
+                        <p class="subtitle">Historial de cumplimiento, defectos y tiempos de entrega. Alimenta directamente el motor de decisión.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-primary" id="btn-nueva-experiencia"><span data-icon="plus" data-icon-size="15"></span>Registrar experiencia</button>
+                    </div>
                 </div>
-                <button class="btn btn-primary" id="btn-nueva-experiencia">+ Registrar Experiencia</button>
-            </div>
 
-            <div class="card mb-1">
-                <div class="card-header">
-                    <h2>Métricas agregadas por proveedor</h2>
-                </div>
-                <div class="card-body">
-                    <div class="form-grid" style="align-items:end;">
-                        <div class="form-group">
-                            <label>Proveedor</label>
-                            <select id="select-metrica-proveedor">
-                                <option value="">Selecciona un proveedor…</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <button class="btn btn-secondary" id="btn-consultar-metricas">Consultar métricas</button>
+                <div class="card mb-1">
+                    <div class="card-header">
+                        <div>
+                            <h2>Métricas agregadas por proveedor</h2>
+                            <div class="card-subtitle">Calculadas por el backend a partir del historial registrado</div>
                         </div>
                     </div>
-                    <div id="metricas-proveedor-resultado"></div>
+                    <div class="card-body">
+                        <div class="form-grid" style="align-items:end;">
+                            <div class="form-group">
+                                <label>Proveedor</label>
+                                <select id="select-metrica-proveedor">
+                                    <option value="">Selecciona un proveedor…</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-secondary" id="btn-consultar-metricas">Consultar métricas</button>
+                            </div>
+                        </div>
+                        <div id="metricas-proveedor-resultado"></div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>Experiencias registradas</h2>
+                <div class="card">
+                    <div class="filter-bar">
+                        <div class="search-input">
+                            <span data-icon="search" data-icon-size="16"></span>
+                            <input type="search" id="search-historial" placeholder="Buscar por proveedor…" aria-label="Buscar en historial">
+                        </div>
+                        <div class="filter-bar-spacer"></div>
+                        <span class="result-count" id="result-count"></span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Proveedor</th>
+                                    <th>Fecha operación</th>
+                                    <th>Cumplimiento</th>
+                                    <th>Entrega prom.</th>
+                                    <th>Productos</th>
+                                    <th class="text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historial-body">
+                                <tr class="skeleton-row"><td colspan="6"><div class="skeleton skeleton-line w-60"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="historial-pagination"></div>
                 </div>
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Proveedor</th>
-                                <th>Fecha operación</th>
-                                <th>Cumplimiento</th>
-                                <th>Entrega prom.</th>
-                                <th>Productos</th>
-                                <th class="text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historial-body">
-                            <tr><td colspan="6"><div class="loading-state"><div class="spinner"></div><span>Cargando historial...</span></div></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
     <div id="modal-root"></div>
     <div id="chat-container"></div>
 
+    <script src="../js/components/icons.js"></script>
     <script src="../js/api.js"></script>
+    <script src="../js/components/ui.js"></script>
     <script src="../js/components/navbar.js"></script>
     <script src="../js/components/sidebar.js"></script>
     <script src="../js/components/modal.js"></script>

@@ -10,46 +10,64 @@
 </head>
 
 <body>
-    <div id="navbar-container"></div>
-    <div class="app-container">
+    <div class="app-shell">
         <div id="sidebar-container"></div>
-        <main class="main-content">
-            <div class="page-header">
-                <div>
-                    <h1>Gestión de Productos</h1>
-                    <p class="subtitle">Administra el catálogo de productos evaluables del sistema.</p>
+        <div class="app-main">
+            <div id="navbar-container"></div>
+            <main class="content-area">
+                <div class="page-header">
+                    <div>
+                        <div class="eyebrow">Procurement</div>
+                        <h1>Productos</h1>
+                        <p class="subtitle">Catálogo de productos evaluables y los proveedores que los ofrecen.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-primary" id="btn-nuevo-producto"><span data-icon="plus" data-icon-size="15"></span>Nuevo producto</button>
+                    </div>
                 </div>
-                <button class="btn btn-primary" id="btn-nuevo-producto">+ Nuevo Producto</button>
-            </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>Catálogo de productos</h2>
+                <div class="card">
+                    <div class="filter-bar">
+                        <div class="search-input">
+                            <span data-icon="search" data-icon-size="16"></span>
+                            <input type="search" id="search-productos" placeholder="Buscar por nombre o código…" aria-label="Buscar productos">
+                        </div>
+                        <select class="filter-select" id="filtro-estado-producto">
+                            <option value="">Todos los estados</option>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                        <div class="filter-bar-spacer"></div>
+                        <span class="result-count" id="result-count"></span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th class="text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productos-body">
+                                <tr class="skeleton-row"><td colspan="5"><div class="skeleton skeleton-line w-60"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="productos-pagination"></div>
                 </div>
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Nombre</th>
-                                <th>Descripción</th>
-                                <th>Estado</th>
-                                <th class="text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productos-body">
-                            <tr><td colspan="5"><div class="loading-state"><div class="spinner"></div><span>Cargando productos...</span></div></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
     <div id="modal-root"></div>
     <div id="chat-container"></div>
 
+    <script src="../js/components/icons.js"></script>
     <script src="../js/api.js"></script>
+    <script src="../js/components/ui.js"></script>
     <script src="../js/components/navbar.js"></script>
     <script src="../js/components/sidebar.js"></script>
     <script src="../js/components/modal.js"></script>

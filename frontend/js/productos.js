@@ -3,17 +3,33 @@
    ============================================================ */
 
 let productosCache = [];
+const productosTable = createTableController(8);
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarProductos();
     document.getElementById('btn-nuevo-producto').addEventListener('click', () => abrirModalProducto());
+
+    document.getElementById('search-productos').addEventListener('input', (e) => {
+        productosTable.setSearch(e.target.value);
+        renderProductosTable();
+    });
+    document.getElementById('filtro-estado-producto').addEventListener('change', () => {
+        aplicarFiltroEstadoProducto();
+        renderProductosTable();
+    });
 });
+
+function aplicarFiltroEstadoProducto() {
+    const estado = document.getElementById('filtro-estado-producto').value;
+    const items = estado ? productosCache.filter((p) => p.estado === estado) : productosCache;
+    productosTable.setItems(items, ['nombre', 'codigo', 'descripcion']);
+}
 
 async function cargarProductos() {
     const body = document.getElementById('productos-body');
-    body.innerHTML = loadingRow(5);
     try {
         productosCache = await api.productos.list({ limit: 1000 });
+        aplicarFiltroEstadoProducto();
         renderProductosTable();
     } catch (err) {
         body.innerHTML = errorRow(5, err.message);
@@ -22,12 +38,19 @@ async function cargarProductos() {
 
 function renderProductosTable() {
     const body = document.getElementById('productos-body');
-    if (!productosCache.length) {
-        body.innerHTML = emptyRow(5, 'Aún no hay productos registrados.');
+    const paginationEl = document.getElementById('productos-pagination');
+    const resultCount = document.getElementById('result-count');
+    const view = productosTable.getView();
+
+    resultCount.textContent = `${view.totalCount} producto(s)`;
+
+    if (!view.totalCount) {
+        body.innerHTML = emptyRow(5, 'Ajusta la búsqueda o el filtro, o registra un nuevo producto.', { title: 'Sin productos', icon: 'products' });
+        paginationEl.innerHTML = '';
         return;
     }
 
-    body.innerHTML = productosCache.map((p) => `
+    body.innerHTML = view.items.map((p) => `
         <tr>
             <td class="cell-muted">${escapeHtml(p.codigo || '—')}</td>
             <td><strong>${escapeHtml(p.nombre)}</strong></td>
@@ -36,12 +59,15 @@ function renderProductosTable() {
             <td>
                 <div class="actions-cell" style="justify-content:flex-end;">
                     <button class="btn btn-ghost btn-sm" data-action="proveedores" data-id="${p.id}">Proveedores</button>
-                    <button class="btn btn-secondary btn-sm" data-action="editar" data-id="${p.id}">Editar</button>
-                    <button class="btn btn-danger btn-sm" data-action="eliminar" data-id="${p.id}">Eliminar</button>
+                    <button class="btn btn-secondary btn-sm" data-action="editar" data-id="${p.id}" data-tooltip="Editar" aria-label="Editar ${escapeHtml(p.nombre)}">${icon('edit', { size: 14 })}</button>
+                    <button class="btn btn-danger btn-sm" data-action="eliminar" data-id="${p.id}" data-tooltip="Eliminar" aria-label="Eliminar ${escapeHtml(p.nombre)}">${icon('trash', { size: 14 })}</button>
                 </div>
             </td>
         </tr>
     `).join('');
+
+    paginationEl.innerHTML = paginationHTML(view);
+    wirePagination(paginationEl, productosTable, renderProductosTable);
 
     body.querySelectorAll('[data-action="editar"]').forEach((btn) =>
         btn.addEventListener('click', () => abrirModalProducto(productosCache.find((p) => p.id === Number(btn.dataset.id))))
@@ -63,7 +89,7 @@ function abrirModalProducto(producto = null) {
             <form id="form-producto">
                 <div class="form-grid single">
                     <div class="form-group">
-                        <label>Nombre *</label>
+                        <label>Nombre<span class="required">*</span></label>
                         <input type="text" name="nombre" required value="${escapeHtml(producto?.nombre || '')}">
                     </div>
                     <div class="form-group">
@@ -98,7 +124,7 @@ function abrirModalProducto(producto = null) {
         const payload = Object.fromEntries(new FormData(form).entries());
         const btn = document.getElementById('btn-guardar-producto');
         btn.disabled = true;
-        btn.textContent = 'Guardando...';
+        btn.textContent = 'Guardando…';
 
         try {
             if (esEdicion) {
@@ -140,7 +166,7 @@ async function abrirModalProveedoresDeProducto(producto) {
     Modal.open({
         title: `Proveedores que ofrecen "${producto.nombre}"`,
         size: 'lg',
-        bodyHTML: `<div id="proveedores-producto-lista"><div class="loading-state"><div class="spinner"></div><span>Cargando proveedores...</span></div></div>`,
+        bodyHTML: `<div id="proveedores-producto-lista"><div class="loading-state"><div class="spinner"></div><span>Cargando proveedores…</span></div></div>`,
         footerHTML: `<button class="btn btn-ghost" id="btn-cerrar-proveedores-producto">Cerrar</button>`,
     });
 
@@ -150,7 +176,7 @@ async function abrirModalProveedoresDeProducto(producto) {
     try {
         const relaciones = await api.proveedorProductos.list({ producto_id: producto.id });
         if (!relaciones.length) {
-            contenedor.innerHTML = `<div class="empty-state">Ningún proveedor ofrece este producto todavía.</div>`;
+            contenedor.innerHTML = `<div class="empty-state"><span class="icon-tile neutral">${icon('providers', { size: 18 })}</span><div class="empty-state-title">Sin proveedores</div><div class="empty-state-desc">Ningún proveedor ofrece este producto todavía.</div></div>`;
             return;
         }
         contenedor.innerHTML = `
@@ -173,6 +199,6 @@ async function abrirModalProveedoresDeProducto(producto) {
             </div>
         `;
     } catch (err) {
-        contenedor.innerHTML = `<div class="error-state">⚠ ${escapeHtml(err.message)}</div>`;
+        contenedor.innerHTML = `<div class="error-state">${icon('alertTriangle', { size: 18 })}<div class="empty-state-desc">${escapeHtml(err.message)}</div></div>`;
     }
 }

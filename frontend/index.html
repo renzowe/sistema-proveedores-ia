@@ -10,28 +10,55 @@
 </head>
 
 <body>
-    <div id="navbar-container"></div>
-    <div class="app-container">
+    <div class="app-shell">
         <div id="sidebar-container"></div>
-        <main class="main-content">
-            <h1>Sistema Inteligente Agéntico para la Evaluación y Selección de Proveedores</h1>
-            <p>Bienvenido al sistema de apoyo a la decisión para la evaluación multicriterio de proveedores mediante IA.
-            </p>
+        <div class="app-main">
+            <div id="navbar-container"></div>
+            <main class="content-area">
+                <div class="page-header">
+                    <div>
+                        <div class="eyebrow">Procurement · Inteligencia artificial</div>
+                        <h1>Sistema Inteligente Agéntico para la Evaluación y Selección de Proveedores</h1>
+                        <p class="subtitle">
+                            Apoyo a la decisión para evaluar proveedores con criterios multicriterio
+                            (precio, calidad, logística, historial y riesgo) mediante un motor
+                            determinístico y una arquitectura de agentes especializados.
+                        </p>
+                    </div>
+                </div>
 
-            <div class="quick-links">
-                <a href="pages/dashboard.html" class="card-link">Dashboard General</a>
-                <a href="pages/proveedores.html" class="card-link">Gestión de Proveedores</a>
-                <a href="pages/productos.html" class="card-link">Gestión de Productos</a>
-                <a href="pages/desempeno.html" class="card-link">Historial de Desempeño</a>
-                <a href="pages/evaluaciones.html" class="card-link">Evaluaciones & Recomendaciones</a>
-            </div>
-        </main>
+                <div class="quick-links">
+                    <a href="pages/dashboard.html" class="card-link">
+                        <span class="icon-tile" data-icon="dashboard"></span>
+                        <span class="card-link-text"><strong>Dashboard</strong><span>Panorama general del sistema</span></span>
+                    </a>
+                    <a href="pages/proveedores.html" class="card-link">
+                        <span class="icon-tile" data-icon="providers"></span>
+                        <span class="card-link-text"><strong>Proveedores</strong><span>Registro y catálogo comercial</span></span>
+                    </a>
+                    <a href="pages/productos.html" class="card-link">
+                        <span class="icon-tile" data-icon="products"></span>
+                        <span class="card-link-text"><strong>Productos</strong><span>Catálogo evaluable</span></span>
+                    </a>
+                    <a href="pages/desempeno.html" class="card-link">
+                        <span class="icon-tile" data-icon="performance"></span>
+                        <span class="card-link-text"><strong>Desempeño</strong><span>Historial de cumplimiento</span></span>
+                    </a>
+                    <a href="pages/evaluaciones.html" class="card-link">
+                        <span class="icon-tile" data-icon="evaluations"></span>
+                        <span class="card-link-text"><strong>Evaluaciones</strong><span>Comparación y recomendación</span></span>
+                    </a>
+                </div>
+            </main>
+        </div>
     </div>
 
     <div id="modal-root"></div>
     <div id="chat-container"></div>
 
+    <script src="js/components/icons.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/components/ui.js"></script>
     <script src="js/components/navbar.js"></script>
     <script src="js/components/sidebar.js"></script>
     <script src="js/components/modal.js"></script>

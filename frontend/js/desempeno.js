@@ -6,10 +6,15 @@ let proveedoresCacheDesempeno = [];
 let productosCacheDesempeno = [];
 let historialCache = [];
 let contadorLineasHistorial = 0;
+const historialTable = createTableController(8);
 
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-nueva-experiencia').addEventListener('click', abrirModalExperiencia);
     document.getElementById('btn-consultar-metricas').addEventListener('click', consultarMetricasProveedor);
+    document.getElementById('search-historial').addEventListener('input', (e) => {
+        historialTable.setSearch(e.target.value);
+        renderHistorialTable();
+    });
 
     await cargarProveedoresParaSelect();
     cargarHistorial();
@@ -36,10 +41,19 @@ async function consultarMetricasProveedor() {
         return;
     }
 
-    resultado.innerHTML = `<div class="loading-state"><div class="spinner"></div><span>Calculando métricas...</span></div>`;
+    resultado.innerHTML = `<div class="loading-state"><div class="spinner"></div><span>Calculando métricas…</span></div>`;
 
     try {
         const m = await api.historial.metricasProveedor(id);
+        if (!m.total_operaciones) {
+            resultado.innerHTML = renderAlert({
+                type: 'info',
+                title: 'Sin historial registrado',
+                body: 'Este proveedor todavía no tiene experiencias registradas. Sus métricas parten de un valor neutro en el motor de decisión.',
+            });
+            renderIcons(resultado);
+            return;
+        }
         resultado.innerHTML = `
             <div class="metrics-grid">
                 <div class="metric-tile"><div class="label">Operaciones registradas</div><div class="value">${m.total_operaciones}</div></div>
@@ -51,15 +65,16 @@ async function consultarMetricasProveedor() {
             </div>
         `;
     } catch (err) {
-        resultado.innerHTML = `<div class="error-state">⚠ ${escapeHtml(err.message)}</div>`;
+        resultado.innerHTML = renderAlert({ type: 'danger', title: 'No se pudo consultar', body: escapeHtml(err.message) });
+        renderIcons(resultado);
     }
 }
 
 async function cargarHistorial() {
     const body = document.getElementById('historial-body');
-    body.innerHTML = loadingRow(6);
     try {
         historialCache = await api.historial.list({ limit: 1000 });
+        historialTable.setItems(historialCache.map((h) => ({ ...h, _proveedorNombre: h.proveedor ? h.proveedor.razon_social : '' })), ['_proveedorNombre']);
         renderHistorialTable();
     } catch (err) {
         body.innerHTML = errorRow(6, err.message);
@@ -68,12 +83,19 @@ async function cargarHistorial() {
 
 function renderHistorialTable() {
     const body = document.getElementById('historial-body');
-    if (!historialCache.length) {
-        body.innerHTML = emptyRow(6, 'Todavía no se ha registrado historial de desempeño.');
+    const paginationEl = document.getElementById('historial-pagination');
+    const resultCount = document.getElementById('result-count');
+    const view = historialTable.getView();
+
+    resultCount.textContent = `${view.totalCount} registro(s)`;
+
+    if (!view.totalCount) {
+        body.innerHTML = emptyRow(6, 'Registra la primera experiencia de desempeño de un proveedor.', { title: 'Sin historial', icon: 'performance' });
+        paginationEl.innerHTML = '';
         return;
     }
 
-    body.innerHTML = historialCache.map((h) => `
+    body.innerHTML = view.items.map((h) => `
         <tr>
             <td><strong>${escapeHtml(h.proveedor ? h.proveedor.razon_social : `Proveedor #${h.proveedor_id}`)}</strong></td>
             <td class="cell-muted">${formatDate(h.fecha_operacion)}</td>
@@ -85,6 +107,9 @@ function renderHistorialTable() {
             </td>
         </tr>
     `).join('');
+
+    paginationEl.innerHTML = paginationHTML(view);
+    wirePagination(paginationEl, historialTable, renderHistorialTable);
 
     body.querySelectorAll('[data-detalle]').forEach((btn) =>
         btn.addEventListener('click', () => verDetalleHistorial(Number(btn.dataset.detalle)))
@@ -137,13 +162,13 @@ async function abrirModalExperiencia() {
             <form id="form-experiencia">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Proveedor *</label>
+                        <label>Proveedor<span class="required">*</span></label>
                         <select name="proveedor_id" id="select-proveedor-experiencia" required>
-                            <option value="">Cargando proveedores...</option>
+                            <option value="">Cargando proveedores…</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Fecha de operación *</label>
+                        <label>Fecha de operación<span class="required">*</span></label>
                         <input type="date" name="fecha_operacion" required>
                     </div>
                     <div class="form-group">
@@ -160,7 +185,7 @@ async function abrirModalExperiencia() {
                     </div>
                 </div>
 
-                <h4 style="margin-top:0.5rem;">Productos de la experiencia</h4>
+                <h4 style="margin-top:0.3rem;">Productos de la experiencia</h4>
                 <div class="table-wrapper">
                     <table class="product-line-table">
                         <thead>
@@ -223,7 +248,7 @@ function agregarLineaHistorial() {
         <td><input type="number" min="0" name="cantidad_entregada" required></td>
         <td><input type="number" min="0" max="100" step="0.1" name="porcentaje_defectos" value="0"></td>
         <td><input type="text" name="observaciones"></td>
-        <td><button type="button" class="remove-line-btn" title="Quitar">&times;</button></td>
+        <td><button type="button" class="remove-line-btn" aria-label="Quitar producto de la lista">${icon('close', { size: 14 })}</button></td>
     `;
     tbody.appendChild(row);
 
@@ -267,7 +292,7 @@ async function guardarExperiencia() {
 
     const btn = document.getElementById('btn-guardar-experiencia');
     btn.disabled = true;
-    btn.textContent = 'Guardando...';
+    btn.textContent = 'Guardando…';
 
     try {
         await api.historial.create(payload);

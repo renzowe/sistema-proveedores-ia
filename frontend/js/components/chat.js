@@ -1,5 +1,5 @@
 /* ============================================================
-   Componente: Chat IA — panel visual del Asistente (Fase 12)
+   Componente: Asistente conversacional — panel visual (Fase 12)
    ============================================================ */
 
 function renderChatWidget() {
@@ -9,26 +9,26 @@ function renderChatWidget() {
     container.innerHTML = `
         <div class="chat-panel" id="chat-panel">
             <div class="chat-panel-header">
-                <strong>Asistente IA</strong>
-                <span class="badge badge-warning">Próximamente</span>
+                <span class="chat-panel-header-title">
+                    ${icon('sparkles', { size: 16 })}
+                    Asistente conversacional
+                </span>
+                <span class="badge badge-neutral">Próximamente</span>
             </div>
             <div class="chat-panel-body">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-                <p style="margin:0;font-size:0.85rem;">
-                    El Asistente conversacional impulsado por Claude estará disponible en la Fase 12,
-                    cuando se active la integración con el LLM.
+                <span class="icon-tile ai">${icon('sparkles', { size: 17 })}</span>
+                <p style="margin:0;font-size:0.82rem;">
+                    Un asistente conversacional (Claude, vía API de Anthropic) está planificado para una
+                    fase posterior. No reemplazará el motor de decisión determinístico: solo ayudará a
+                    interpretar solicitudes y explicar resultados ya calculados por el sistema.
                 </p>
             </div>
             <div class="chat-panel-footer">
-                <input type="text" placeholder="Disponible en Fase 12…" disabled>
+                <input type="text" placeholder="Disponible próximamente…" disabled aria-disabled="true">
             </div>
         </div>
-        <button class="chat-fab" id="chat-fab-btn" aria-label="Abrir asistente IA">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-            </svg>
+        <button class="chat-fab" id="chat-fab-btn" aria-label="Abrir asistente conversacional" aria-haspopup="dialog">
+            ${icon('sparkles', { size: 21 })}
         </button>
     `;
 

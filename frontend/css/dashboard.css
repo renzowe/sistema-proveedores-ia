@@ -1,9 +1,16 @@
-/* Dashboard styles */
+/* Dashboard — extensiones específicas (KPIs y tablas base viven en styles.css) */
 
-.dashboard-actions {
-    display: flex;
-    gap: 0.6rem;
-    flex-wrap: wrap;
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 1100px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .recommended-cell {
@@ -11,10 +18,50 @@
     align-items: center;
     gap: 0.4rem;
     font-weight: 600;
+    color: var(--success);
 }
 
-.recommended-cell svg {
-    width: 14px;
-    height: 14px;
+.recommended-cell .icon {
     color: var(--success);
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.activity-item {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-item .icon-tile {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.activity-item-body {
+    min-width: 0;
+}
+
+.activity-item-title {
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.activity-item-meta {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-top: 0.1rem;
 }

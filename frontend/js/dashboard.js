@@ -34,7 +34,7 @@ async function cargarKPIs() {
             .map((h) => Number(h.cumplimiento_porcentaje))
             .filter((v) => !Number.isNaN(v));
         const promedio = valores.length ? valores.reduce((a, b) => a + b, 0) / valores.length : 0;
-        elCumplimiento.textContent = `${promedio.toFixed(1)}%`;
+        elCumplimiento.textContent = valores.length ? `${promedio.toFixed(1)}%` : 'Sin datos';
     } catch {
         elCumplimiento.textContent = '—';
     }
@@ -42,10 +42,28 @@ async function cargarKPIs() {
     try {
         const evaluaciones = await api.evaluaciones.list({ limit: 1000 });
         const procesadas = evaluaciones.filter((e) => (e.detalles_resultado || []).length > 0);
+        const pendientes = evaluaciones.filter((e) => (e.detalles_resultado || []).length === 0);
         elEvaluaciones.textContent = procesadas.length;
+        renderPendientes(pendientes);
     } catch {
         elEvaluaciones.textContent = '—';
     }
+}
+
+function renderPendientes(pendientes) {
+    const card = document.getElementById('pending-card');
+    const body = document.getElementById('pending-card-body');
+    if (!pendientes.length) {
+        card.hidden = true;
+        return;
+    }
+    card.hidden = false;
+    body.innerHTML = renderAlert({
+        type: 'warning',
+        title: `${pendientes.length} evaluación(es) sin procesar`,
+        body: `Hay solicitudes creadas que todavía no pasaron por el motor de decisión. <a href="evaluaciones.html">Ir a Evaluaciones →</a>`,
+    });
+    renderIcons(body);
 }
 
 async function cargarUltimasEvaluaciones() {
@@ -53,7 +71,7 @@ async function cargarUltimasEvaluaciones() {
     try {
         const evaluaciones = await api.evaluaciones.list({ limit: 1000 });
         if (!evaluaciones.length) {
-            body.innerHTML = emptyRow(5, 'Todavía no se han creado evaluaciones.');
+            body.innerHTML = emptyRow(5, 'Crea tu primera evaluación para ver resultados aquí.', { title: 'Todavía no hay evaluaciones', icon: 'evaluations' });
             return;
         }
 
@@ -64,10 +82,7 @@ async function cargarUltimasEvaluaciones() {
         body.innerHTML = ultimas.map((ev) => {
             const recomendado = (ev.detalles_resultado || []).find((d) => d.recomendado);
             const recomendadoHTML = recomendado
-                ? `<span class="recommended-cell">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>
-                        ${escapeHtml(recomendado.proveedor ? recomendado.proveedor.razon_social : `Proveedor #${recomendado.proveedor_id}`)}
-                   </span>`
+                ? `<span class="recommended-cell">${icon('checkCircle', { size: 14 })}${escapeHtml(recomendado.proveedor ? recomendado.proveedor.razon_social : `Proveedor #${recomendado.proveedor_id}`)}</span>`
                 : `<span class="text-muted">Pendiente de procesar</span>`;
 
             const estado = (ev.detalles_resultado || []).length > 0 ? 'Procesada' : (ev.estado || 'Pendiente');
@@ -75,7 +90,7 @@ async function cargarUltimasEvaluaciones() {
             return `
                 <tr>
                     <td>
-                        <div class="eval-title-cell">
+                        <div class="cell-primary">
                             <strong>${escapeHtml(ev.titulo)}</strong>
                             <span>${(ev.productos_solicitados || []).length} producto(s)</span>
                         </div>

@@ -154,16 +154,38 @@ function showToast(message, type = 'info') {
     setTimeout(() => toast.remove(), 4200);
 }
 
-function loadingRow(colspan, text = 'Cargando datos...') {
-    return `<tr><td colspan="${colspan}"><div class="loading-state"><div class="spinner"></div><span>${escapeHtml(text)}</span></div></td></tr>`;
+function loadingRow(colspan, rows = 3) {
+    return Array.from({ length: rows }).map(() => `
+        <tr class="skeleton-row">
+            <td colspan="${colspan}">
+                <div class="skeleton skeleton-line w-60"></div>
+            </td>
+        </tr>
+    `).join('');
 }
 
 function errorRow(colspan, message) {
-    return `<tr><td colspan="${colspan}"><div class="error-state">⚠ ${escapeHtml(message)}</div></td></tr>`;
+    return `
+        <tr><td colspan="${colspan}">
+            <div class="error-state">
+                <span class="icon-tile">${icon('alertTriangle', { size: 20 })}</span>
+                <div class="empty-state-title">No se pudo cargar la información</div>
+                <div class="empty-state-desc">${escapeHtml(message)}</div>
+            </div>
+        </td></tr>
+    `;
 }
 
-function emptyRow(colspan, text = 'No hay registros todavía.') {
-    return `<tr><td colspan="${colspan}"><div class="empty-state">${escapeHtml(text)}</div></td></tr>`;
+function emptyRow(colspan, text = 'No hay registros todavía.', opts = {}) {
+    return `
+        <tr><td colspan="${colspan}">
+            <div class="empty-state">
+                <span class="icon-tile neutral">${icon(opts.icon || 'search', { size: 20 })}</span>
+                <div class="empty-state-title">${escapeHtml(opts.title || 'Sin resultados')}</div>
+                <div class="empty-state-desc">${escapeHtml(text)}</div>
+            </div>
+        </td></tr>
+    `;
 }
 
 function estadoBadge(estado) {

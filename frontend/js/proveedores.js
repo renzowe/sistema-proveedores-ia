@@ -3,17 +3,35 @@
    ============================================================ */
 
 let proveedoresCache = [];
+const proveedoresTable = createTableController(8);
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarProveedores();
     document.getElementById('btn-nuevo-proveedor').addEventListener('click', () => abrirModalProveedor());
+
+    document.getElementById('search-proveedores').addEventListener('input', (e) => {
+        proveedoresTable.setSearch(e.target.value);
+        renderProveedoresTable();
+    });
+    document.getElementById('filtro-estado').addEventListener('change', () => {
+        aplicarFiltroEstado();
+        renderProveedoresTable();
+    });
 });
+
+function aplicarFiltroEstado() {
+    const estado = document.getElementById('filtro-estado').value;
+    const items = estado
+        ? proveedoresCache.filter((p) => p.estado === estado)
+        : proveedoresCache;
+    proveedoresTable.setItems(items, ['razon_social', 'ruc', 'nombre_comercial']);
+}
 
 async function cargarProveedores() {
     const body = document.getElementById('proveedores-body');
-    body.innerHTML = loadingRow(6);
     try {
         proveedoresCache = await api.proveedores.list({ limit: 1000 });
+        aplicarFiltroEstado();
         renderProveedoresTable();
     } catch (err) {
         body.innerHTML = errorRow(6, err.message);
@@ -22,14 +40,26 @@ async function cargarProveedores() {
 
 function renderProveedoresTable() {
     const body = document.getElementById('proveedores-body');
-    if (!proveedoresCache.length) {
-        body.innerHTML = emptyRow(6, 'Aún no hay proveedores registrados.');
+    const paginationEl = document.getElementById('proveedores-pagination');
+    const resultCount = document.getElementById('result-count');
+    const view = proveedoresTable.getView();
+
+    resultCount.textContent = `${view.totalCount} proveedor(es)`;
+
+    if (!view.totalCount) {
+        body.innerHTML = emptyRow(6, 'Ajusta la búsqueda o el filtro, o registra un nuevo proveedor.', { title: 'Sin proveedores', icon: 'providers' });
+        paginationEl.innerHTML = '';
         return;
     }
 
-    body.innerHTML = proveedoresCache.map((p) => `
+    body.innerHTML = view.items.map((p) => `
         <tr>
-            <td><strong>${escapeHtml(p.razon_social)}</strong>${p.nombre_comercial ? `<br><span class="cell-muted">${escapeHtml(p.nombre_comercial)}</span>` : ''}</td>
+            <td>
+                <div class="cell-primary">
+                    <strong>${escapeHtml(p.razon_social)}</strong>
+                    ${p.nombre_comercial ? `<span>${escapeHtml(p.nombre_comercial)}</span>` : ''}
+                </div>
+            </td>
             <td>${escapeHtml(p.ruc)}</td>
             <td class="cell-muted">${escapeHtml(p.ciudad || '—')}</td>
             <td class="cell-muted">${escapeHtml(p.contacto || '—')}</td>
@@ -37,12 +67,15 @@ function renderProveedoresTable() {
             <td>
                 <div class="actions-cell" style="justify-content:flex-end;">
                     <button class="btn btn-ghost btn-sm" data-action="catalogo" data-id="${p.id}">Catálogo</button>
-                    <button class="btn btn-secondary btn-sm" data-action="editar" data-id="${p.id}">Editar</button>
-                    <button class="btn btn-danger btn-sm" data-action="eliminar" data-id="${p.id}">Eliminar</button>
+                    <button class="btn btn-secondary btn-sm" data-action="editar" data-id="${p.id}" data-tooltip="Editar" aria-label="Editar ${escapeHtml(p.razon_social)}">${icon('edit', { size: 14 })}</button>
+                    <button class="btn btn-danger btn-sm" data-action="eliminar" data-id="${p.id}" data-tooltip="Eliminar" aria-label="Eliminar ${escapeHtml(p.razon_social)}">${icon('trash', { size: 14 })}</button>
                 </div>
             </td>
         </tr>
     `).join('');
+
+    paginationEl.innerHTML = paginationHTML(view);
+    wirePagination(paginationEl, proveedoresTable, renderProveedoresTable);
 
     body.querySelectorAll('[data-action="editar"]').forEach((btn) =>
         btn.addEventListener('click', () => abrirModalProveedor(proveedoresCache.find((p) => p.id === Number(btn.dataset.id))))
@@ -65,11 +98,11 @@ function abrirModalProveedor(proveedor = null) {
             <form id="form-proveedor">
                 <div class="form-grid">
                     <div class="form-group full">
-                        <label>Razón social *</label>
+                        <label>Razón social<span class="required">*</span></label>
                         <input type="text" name="razon_social" required value="${escapeHtml(proveedor?.razon_social || '')}">
                     </div>
                     <div class="form-group">
-                        <label>RUC *</label>
+                        <label>RUC<span class="required">*</span></label>
                         <input type="text" name="ruc" required maxlength="20" value="${escapeHtml(proveedor?.ruc || '')}">
                     </div>
                     <div class="form-group">
@@ -126,7 +159,7 @@ function abrirModalProveedor(proveedor = null) {
 
         const btn = document.getElementById('btn-guardar-proveedor');
         btn.disabled = true;
-        btn.textContent = 'Guardando...';
+        btn.textContent = 'Guardando…';
 
         try {
             if (esEdicion) {
@@ -171,23 +204,23 @@ async function abrirModalCatalogo(proveedor) {
         title: `Catálogo de ${proveedor.razon_social}`,
         size: 'lg',
         bodyHTML: `
-            <div id="catalogo-lista"><div class="loading-state"><div class="spinner"></div><span>Cargando catálogo...</span></div></div>
-            <hr style="border-color:var(--border-soft); margin:1.2rem 0;">
+            <div id="catalogo-lista"><div class="loading-state"><div class="spinner"></div><span>Cargando catálogo…</span></div></div>
+            <hr style="border:none;border-top:1px solid var(--border); margin:1.15rem 0;">
             <h4>Agregar producto al catálogo</h4>
             <form id="form-catalogo">
                 <div class="form-grid">
                     <div class="form-group full">
-                        <label>Producto *</label>
+                        <label>Producto<span class="required">*</span></label>
                         <select name="producto_id" id="select-producto-catalogo" required>
-                            <option value="">Cargando productos...</option>
+                            <option value="">Cargando productos…</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Precio (S/) *</label>
+                        <label>Precio (S/)<span class="required">*</span></label>
                         <input type="number" step="0.01" min="0" name="precio" required>
                     </div>
                     <div class="form-group">
-                        <label>Tiempo de entrega (días) *</label>
+                        <label>Tiempo de entrega (días)<span class="required">*</span></label>
                         <input type="number" min="0" name="tiempo_entrega_dias" required>
                     </div>
                     <div class="form-group full">
@@ -232,7 +265,7 @@ async function cargarCatalogoProveedor(proveedorId) {
     try {
         const relaciones = await api.proveedorProductos.list({ proveedor_id: proveedorId });
         if (!relaciones.length) {
-            contenedor.innerHTML = `<div class="empty-state">Este proveedor todavía no tiene productos asignados.</div>`;
+            contenedor.innerHTML = `<div class="empty-state"><span class="icon-tile neutral">${icon('package', { size: 18 })}</span><div class="empty-state-title">Catálogo vacío</div><div class="empty-state-desc">Este proveedor todavía no tiene productos asignados.</div></div>`;
             return;
         }
 
@@ -282,7 +315,7 @@ async function cargarCatalogoProveedor(proveedorId) {
             });
         });
     } catch (err) {
-        contenedor.innerHTML = `<div class="error-state">⚠ ${escapeHtml(err.message)}</div>`;
+        contenedor.innerHTML = `<div class="error-state">${icon('alertTriangle', { size: 18 })}<div class="empty-state-desc">${escapeHtml(err.message)}</div></div>`;
     }
 }
 

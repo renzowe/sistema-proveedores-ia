@@ -5,10 +5,19 @@
 let productosCacheEval = [];
 let evaluacionesCache = [];
 let contadorLineasEval = 0;
+const evaluacionesTable = createTableController(8);
 
 document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-agregar-linea-eval').addEventListener('click', () => agregarLineaEvaluacion());
     document.getElementById('form-evaluacion').addEventListener('submit', crearEvaluacion);
+    document.getElementById('search-evaluaciones').addEventListener('input', (e) => {
+        evaluacionesTable.setSearch(e.target.value);
+        renderEvaluacionesTable();
+    });
+    document.getElementById('filtro-estado-eval').addEventListener('change', () => {
+        aplicarFiltroEstadoEval();
+        renderEvaluacionesTable();
+    });
 
     await cargarProductosParaEvaluacion();
     agregarLineaEvaluacion();
@@ -34,7 +43,7 @@ function agregarLineaEvaluacion() {
         <td><select name="producto_id" required>${opciones || '<option value="">Sin productos</option>'}</select></td>
         <td><input type="number" min="1" name="cantidad" required value="1"></td>
         <td><input type="text" name="especificaciones" placeholder="Opcional"></td>
-        <td><button type="button" class="remove-line-btn" title="Quitar">&times;</button></td>
+        <td><button type="button" class="remove-line-btn" aria-label="Quitar producto de la lista">${icon('close', { size: 14 })}</button></td>
     `;
     tbody.appendChild(row);
 
@@ -76,7 +85,7 @@ async function crearEvaluacion(event) {
 
     const btn = document.getElementById('btn-crear-evaluacion');
     btn.disabled = true;
-    btn.textContent = 'Creando...';
+    btn.textContent = 'Creando…';
 
     try {
         await api.evaluaciones.create(payload);
@@ -93,11 +102,21 @@ async function crearEvaluacion(event) {
     }
 }
 
+function aplicarFiltroEstadoEval() {
+    const filtro = document.getElementById('filtro-estado-eval').value;
+    const enriquecidas = evaluacionesCache.map((ev) => ({
+        ...ev,
+        _estadoCalculado: (ev.detalles_resultado || []).length > 0 ? 'procesada' : 'pendiente',
+    }));
+    const items = filtro ? enriquecidas.filter((ev) => ev._estadoCalculado === filtro) : enriquecidas;
+    evaluacionesTable.setItems(items, ['titulo']);
+}
+
 async function cargarEvaluaciones() {
     const body = document.getElementById('evaluaciones-body');
-    body.innerHTML = loadingRow(5);
     try {
         evaluacionesCache = await api.evaluaciones.list({ limit: 1000 });
+        aplicarFiltroEstadoEval();
         renderEvaluacionesTable();
     } catch (err) {
         body.innerHTML = errorRow(5, err.message);
@@ -106,36 +125,46 @@ async function cargarEvaluaciones() {
 
 function renderEvaluacionesTable() {
     const body = document.getElementById('evaluaciones-body');
-    if (!evaluacionesCache.length) {
-        body.innerHTML = emptyRow(5, 'Todavía no se han creado evaluaciones.');
+    const paginationEl = document.getElementById('evaluaciones-pagination');
+    const resultCount = document.getElementById('result-count');
+    const view = evaluacionesTable.getView();
+
+    resultCount.textContent = `${view.totalCount} evaluación(es)`;
+
+    if (!view.totalCount) {
+        body.innerHTML = emptyRow(5, 'Crea una evaluación con el formulario de arriba.', { title: 'Sin evaluaciones', icon: 'evaluations' });
+        paginationEl.innerHTML = '';
         return;
     }
 
-    const ordenadas = [...evaluacionesCache].sort((a, b) => new Date(b.fecha_evaluacion) - new Date(a.fecha_evaluacion));
+    const ordenadas = [...view.items].sort((a, b) => new Date(b.fecha_evaluacion) - new Date(a.fecha_evaluacion));
 
     body.innerHTML = ordenadas.map((ev) => {
-        const procesada = (ev.detalles_resultado || []).length > 0;
+        const procesada = ev._estadoCalculado === 'procesada';
         return `
             <tr>
                 <td>
-                    <div class="eval-title-cell">
+                    <div class="cell-primary">
                         <strong>${escapeHtml(ev.titulo)}</strong>
                         <span>${(ev.productos_solicitados || []).length} producto(s) · máx. ${ev.entrega_maxima_dias || '—'} días</span>
                     </div>
                 </td>
-                <td><span class="badge badge-info">${escapeHtml(ev.prioridad || 'balanceado')}</span></td>
+                <td><span class="badge badge-neutral">${escapeHtml(ev.prioridad || 'balanceado')}</span></td>
                 <td class="cell-muted">${formatDate(ev.fecha_evaluacion)}</td>
                 <td>${estadoBadge(procesada ? 'Procesada' : 'Pendiente')}</td>
                 <td>
                     <div class="actions-cell" style="justify-content:flex-end;">
                         ${!procesada ? `<button class="btn btn-secondary btn-sm" data-procesar="${ev.id}">Procesar</button>` : ''}
                         <a class="btn btn-ghost btn-sm" href="evaluacion-detalle.html?id=${ev.id}">Ver detalle</a>
-                        <button class="btn btn-danger btn-sm" data-eliminar="${ev.id}">Eliminar</button>
+                        <button class="btn btn-danger btn-sm" data-eliminar="${ev.id}" data-tooltip="Eliminar" aria-label="Eliminar ${escapeHtml(ev.titulo)}">${icon('trash', { size: 14 })}</button>
                     </div>
                 </td>
             </tr>
         `;
     }).join('');
+
+    paginationEl.innerHTML = paginationHTML(view);
+    wirePagination(paginationEl, evaluacionesTable, renderEvaluacionesTable);
 
     body.querySelectorAll('[data-procesar]').forEach((btn) =>
         btn.addEventListener('click', () => procesarEvaluacion(Number(btn.dataset.procesar), btn))
@@ -147,7 +176,7 @@ function renderEvaluacionesTable() {
 
 async function procesarEvaluacion(id, btn) {
     btn.disabled = true;
-    btn.textContent = 'Procesando...';
+    btn.textContent = 'Procesando…';
     try {
         await api.evaluaciones.procesar(id);
         showToast('Evaluación procesada. Redirigiendo al detalle...', 'success');

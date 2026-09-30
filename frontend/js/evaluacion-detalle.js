@@ -1,5 +1,5 @@
 /* ============================================================
-   Página: Detalle de Evaluación y Recomendación Agéntica
+   Página: Detalle de Evaluación y Recomendación
    ============================================================ */
 
 const CRITERIOS_LABELS = {
@@ -11,12 +11,21 @@ const CRITERIOS_LABELS = {
     final: 'Puntaje Final',
 };
 
+const CRITERIOS_ICONS = {
+    precio: 'dollar',
+    calidad: 'award',
+    logistica: 'truck',
+    historial: 'clock',
+    riesgo: 'shield',
+    final: 'star',
+};
+
 const AGENTES_TABS = [
-    { key: 'financiero', label: 'Agente Financiero' },
-    { key: 'calidad', label: 'Agente de Calidad' },
-    { key: 'logistico', label: 'Agente Logístico' },
-    { key: 'riesgo', label: 'Agente de Riesgo' },
-    { key: 'decisor', label: 'Agente Decisor' },
+    { key: 'financiero', label: 'Financiero', icon: 'dollar' },
+    { key: 'calidad', label: 'Calidad', icon: 'award' },
+    { key: 'logistico', label: 'Logístico', icon: 'truck' },
+    { key: 'riesgo', label: 'Riesgo', icon: 'shield' },
+    { key: 'decisor', label: 'Decisor', icon: 'checkCircle' },
 ];
 
 let evaluacionActual = null;
@@ -31,7 +40,8 @@ function obtenerEvaluacionId() {
 document.addEventListener('DOMContentLoaded', () => {
     const id = obtenerEvaluacionId();
     if (!id) {
-        document.getElementById('detalle-content').innerHTML = `<div class="error-state">⚠ No se especificó una evaluación válida.</div>`;
+        document.getElementById('detalle-content').innerHTML = renderAlert({ type: 'danger', title: 'Evaluación no especificada', body: 'No se indicó un identificador de evaluación válido en la URL.' });
+        renderIcons(document.getElementById('detalle-content'));
         return;
     }
     document.getElementById('btn-ver-compatibles').addEventListener('click', () => abrirModalCompatibles(id));
@@ -53,7 +63,7 @@ async function abrirModalCompatibles(id) {
         const proveedores = data.proveedores_compatibles || [];
 
         if (!proveedores.length) {
-            contenedor.innerHTML = `<div class="empty-state">Ningún proveedor activo ofrece los productos solicitados en esta evaluación.</div>`;
+            contenedor.innerHTML = `<div class="empty-state"><span class="icon-tile neutral">${icon('providers', { size: 18 })}</span><div class="empty-state-title">Sin coincidencias</div><div class="empty-state-desc">Ningún proveedor activo ofrece los productos solicitados en esta evaluación.</div></div>`;
             return;
         }
 
@@ -82,7 +92,7 @@ async function abrirModalCompatibles(id) {
             </div>
         `;
     } catch (err) {
-        contenedor.innerHTML = `<div class="error-state">⚠ ${escapeHtml(err.message)}</div>`;
+        contenedor.innerHTML = `<div class="error-state">${icon('alertTriangle', { size: 18 })}<div class="empty-state-desc">${escapeHtml(err.message)}</div></div>`;
     }
 }
 
@@ -101,7 +111,8 @@ async function cargarEvaluacion(id) {
             await renderProcesada(id);
         }
     } catch (err) {
-        contenido.innerHTML = `<div class="error-state">⚠ ${escapeHtml(err.message)}</div>`;
+        contenido.innerHTML = renderAlert({ type: 'danger', title: 'No se pudo cargar la evaluación', body: escapeHtml(err.message) });
+        renderIcons(contenido);
     }
 }
 
@@ -136,7 +147,9 @@ function renderSinProcesar(id) {
         <div class="card">
             <div class="card-body">
                 <div class="empty-state">
-                    <p style="margin:0;">Esta evaluación todavía no ha sido procesada por el motor de agentes.</p>
+                    <span class="icon-tile">${icon('evaluations', { size: 20 })}</span>
+                    <div class="empty-state-title">Evaluación pendiente de procesar</div>
+                    <div class="empty-state-desc">El motor de decisión todavía no calculó puntajes ni recomendación para esta solicitud.</div>
                     <button class="btn btn-primary mt-1" id="btn-procesar-detalle">Procesar evaluación ahora</button>
                 </div>
             </div>
@@ -144,9 +157,9 @@ function renderSinProcesar(id) {
     `;
 
     document.getElementById('btn-procesar-detalle').addEventListener('click', async (e) => {
-        const btn = e.target;
+        const btn = e.target.closest('button');
         btn.disabled = true;
-        btn.textContent = 'Procesando...';
+        btn.textContent = 'Procesando…';
         try {
             await api.evaluaciones.procesar(id);
             showToast('Evaluación procesada correctamente.', 'success');
@@ -167,9 +180,7 @@ async function renderProcesada(id) {
 
     contenido.innerHTML = `
         <div class="recommended-banner">
-            <div class="icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.26L21 9.27l-4.5 4.38L17.8 20 12 16.9 6.2 20l1.3-6.35L3 9.27l6.1-1.01L12 2z"></path></svg>
-            </div>
+            <span class="icon-tile">${icon('star', { size: 22 })}</span>
             <div>
                 <div class="label">Proveedor recomendado</div>
                 <div class="name">${escapeHtml(ganador.proveedor ? ganador.proveedor.razon_social : `Proveedor #${ganador.proveedor_id}`)}</div>
@@ -192,6 +203,8 @@ async function renderProcesada(id) {
                 `;
             }).join('')}
         </div>
+
+        <div class="card mb-1" id="card-metodologia"></div>
 
         <div class="card mb-1">
             <div class="card-header"><h2>Ranking de proveedores evaluados</h2></div>
@@ -225,7 +238,12 @@ async function renderProcesada(id) {
         </div>
 
         <div class="card" id="card-dictamenes-agentes">
-            <div class="card-header"><h2>Dictámenes de Agentes IA</h2></div>
+            <div class="card-header">
+                <div>
+                    <h2>Dictámenes del motor de agentes</h2>
+                    <div class="card-subtitle">Financiero · Calidad · Logístico · Riesgo · Decisor</div>
+                </div>
+            </div>
             <div class="card-body">
                 <div class="loading-state"><div class="spinner"></div><span>Consultando informe agéntico...</span></div>
             </div>
@@ -246,11 +264,45 @@ async function renderProcesada(id) {
 async function cargarInformeAgentes(id) {
     try {
         informeAgentesActual = await api.evaluaciones.informeAgentes(id);
+        renderMetodologia();
         renderDictamenesAgentes();
     } catch (err) {
         const body = document.querySelector('#card-dictamenes-agentes .card-body');
-        if (body) body.innerHTML = `<div class="error-state">⚠ No se pudo obtener el informe agéntico: ${escapeHtml(err.message)}</div>`;
+        if (body) body.innerHTML = renderAlert({ type: 'danger', title: 'No se pudo obtener el informe agéntico', body: escapeHtml(err.message) });
+        renderIcons(body);
+        const metCard = document.getElementById('card-metodologia');
+        if (metCard) metCard.remove();
     }
+}
+
+const CRITERIOS_ORDEN = ['precio', 'calidad', 'logistica', 'historial', 'riesgo'];
+
+function renderMetodologia() {
+    const card = document.getElementById('card-metodologia');
+    if (!card || !informeAgentesActual) return;
+
+    const ponderaciones = informeAgentesActual.ponderaciones || {};
+    const prioridad = informeAgentesActual.prioridad || evaluacionActual.prioridad || 'balanceado';
+
+    card.innerHTML = `
+        <div class="card-header"><h2>Metodología aplicada</h2></div>
+        <div class="card-body">
+            ${renderAlert({
+                type: 'info',
+                iconName: 'info',
+                title: 'Cálculo 100% determinístico',
+                body: `Prioridad seleccionada: <strong>${escapeHtml(prioridad)}</strong>. El puntaje final de cada proveedor es la suma ponderada de 5 criterios, calculada con reglas de negocio fijas — no interviene ningún modelo de lenguaje en esta cifra.`,
+            })}
+            <div class="flex" style="gap:0.6rem; flex-wrap:wrap; margin-top:0.9rem;">
+                ${CRITERIOS_ORDEN.map((c) => `
+                    <span class="badge badge-neutral" style="padding:0.4rem 0.7rem;">
+                        ${icon(CRITERIOS_ICONS[c], { size: 13 })} ${CRITERIOS_LABELS[c]}: ${Math.round((ponderaciones[c] || 0) * 100)}%
+                    </span>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    renderIcons(card);
 }
 
 function renderDictamenesAgentes() {
@@ -274,6 +326,14 @@ function renderDictamenesAgentes() {
     `).join('');
 
     body.innerHTML = `
+        <div class="ai-provenance-alert">
+            ${renderAlert({
+                type: 'ai',
+                iconName: 'sparkles',
+                title: 'Motor de agentes especializados (reglas determinísticas)',
+                body: 'Cada dictamen es generado por un agente de dominio (Financiero, Calidad, Logístico, Riesgo, Decisor) usando fórmulas y umbrales fijos sobre datos reales del sistema. No es texto generado por un modelo de lenguaje — esa capacidad está prevista para una fase posterior.',
+            })}
+        </div>
         <div class="agent-dictamen mb-1">
             <strong>Conclusión ejecutiva del Agente Decisor:</strong><br>
             ${escapeHtml(informeAgentesActual.conclusion_ejecutiva || '—')}
@@ -282,6 +342,7 @@ function renderDictamenesAgentes() {
         <div class="tabs" id="agentes-tabs-nav"></div>
         <div id="agentes-tab-panels"></div>
     `;
+    renderIcons(body);
 
     body.querySelectorAll('[data-chip]').forEach((chip) =>
         chip.addEventListener('click', () => {
@@ -295,7 +356,9 @@ function renderDictamenesAgentes() {
     const tabPanels = document.getElementById('agentes-tab-panels');
 
     tabsNav.innerHTML = AGENTES_TABS.map((tab, idx) => `
-        <button class="tab-btn ${idx === 0 ? 'active' : ''}" data-tab="${tab.key}">${tab.label}</button>
+        <button class="tab-btn ${idx === 0 ? 'active' : ''}" data-tab="${tab.key}">
+            <span class="agent-tab-icon">${icon(tab.icon, { size: 14 })}</span>${tab.label}
+        </button>
     `).join('');
 
     tabPanels.innerHTML = AGENTES_TABS.map((tab, idx) => {

@@ -10,47 +10,65 @@
 </head>
 
 <body>
-    <div id="navbar-container"></div>
-    <div class="app-container">
+    <div class="app-shell">
         <div id="sidebar-container"></div>
-        <main class="main-content">
-            <div class="page-header">
-                <div>
-                    <h1>Gestión de Proveedores</h1>
-                    <p class="subtitle">Registra y administra los proveedores disponibles para evaluación.</p>
+        <div class="app-main">
+            <div id="navbar-container"></div>
+            <main class="content-area">
+                <div class="page-header">
+                    <div>
+                        <div class="eyebrow">Procurement</div>
+                        <h1>Proveedores</h1>
+                        <p class="subtitle">Registra y administra los proveedores disponibles para evaluación, y su catálogo comercial.</p>
+                    </div>
+                    <div class="page-header-actions">
+                        <button class="btn btn-primary" id="btn-nuevo-proveedor"><span data-icon="plus" data-icon-size="15"></span>Nuevo proveedor</button>
+                    </div>
                 </div>
-                <button class="btn btn-primary" id="btn-nuevo-proveedor">+ Nuevo Proveedor</button>
-            </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h2>Listado de proveedores</h2>
+                <div class="card">
+                    <div class="filter-bar">
+                        <div class="search-input">
+                            <span data-icon="search" data-icon-size="16"></span>
+                            <input type="search" id="search-proveedores" placeholder="Buscar por razón social o RUC…" aria-label="Buscar proveedores">
+                        </div>
+                        <select class="filter-select" id="filtro-estado">
+                            <option value="">Todos los estados</option>
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                        <div class="filter-bar-spacer"></div>
+                        <span class="result-count" id="result-count"></span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Razón social</th>
+                                    <th>RUC</th>
+                                    <th>Ciudad</th>
+                                    <th>Contacto</th>
+                                    <th>Estado</th>
+                                    <th class="text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="proveedores-body">
+                                <tr class="skeleton-row"><td colspan="6"><div class="skeleton skeleton-line w-60"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="proveedores-pagination"></div>
                 </div>
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Razón social</th>
-                                <th>RUC</th>
-                                <th>Ciudad</th>
-                                <th>Contacto</th>
-                                <th>Estado</th>
-                                <th class="text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="proveedores-body">
-                            <tr><td colspan="6"><div class="loading-state"><div class="spinner"></div><span>Cargando proveedores...</span></div></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 
     <div id="modal-root"></div>
     <div id="chat-container"></div>
 
+    <script src="../js/components/icons.js"></script>
     <script src="../js/api.js"></script>
+    <script src="../js/components/ui.js"></script>
     <script src="../js/components/navbar.js"></script>
     <script src="../js/components/sidebar.js"></script>
     <script src="../js/components/modal.js"></script>

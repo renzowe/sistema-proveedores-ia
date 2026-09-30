@@ -1,34 +1,43 @@
 /* ============================================================
-   Componente: Sidebar
+   Componente: Sidebar — navegación empresarial agrupada
    ============================================================ */
 
-const SIDEBAR_LINKS = [
+const SIDEBAR_GROUPS = [
     {
-        page: 'dashboard.html',
-        label: 'Dashboard',
-        icon: '<rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect>',
+        label: 'Panel',
+        links: [
+            { page: 'dashboard.html', label: 'Dashboard', icon: 'dashboard' },
+        ],
     },
     {
-        page: 'proveedores.html',
-        label: 'Proveedores',
-        icon: '<path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 21v-6h6v6"></path>',
+        label: 'Procurement',
+        links: [
+            { page: 'proveedores.html', label: 'Proveedores', icon: 'providers' },
+            { page: 'productos.html', label: 'Productos', icon: 'products' },
+            { page: 'desempeno.html', label: 'Desempeño', icon: 'performance' },
+        ],
     },
     {
-        page: 'productos.html',
-        label: 'Productos',
-        icon: '<path d="M21 8l-9-5-9 5 9 5 9-5z"></path><path d="M3 8v8l9 5 9-5V8"></path><path d="M12 13v8"></path>',
-    },
-    {
-        page: 'desempeno.html',
-        label: 'Desempeño',
-        icon: '<path d="M3 3v18h18"></path><path d="M7 15l4-5 3 3 5-7"></path>',
-    },
-    {
-        page: 'evaluaciones.html',
-        label: 'Evaluaciones',
-        icon: '<path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>',
+        label: 'Decisiones',
+        links: [
+            { page: 'evaluaciones.html', label: 'Evaluaciones', icon: 'evaluations' },
+        ],
     },
 ];
+
+const SECTION_LABEL_OVERRIDES = {
+    'evaluacion-detalle.html': 'Detalle de evaluación',
+};
+
+function currentSectionLabel() {
+    const currentFile = location.pathname.split('/').pop();
+    if (SECTION_LABEL_OVERRIDES[currentFile]) return SECTION_LABEL_OVERRIDES[currentFile];
+    for (const group of SIDEBAR_GROUPS) {
+        const match = group.links.find((l) => l.page === currentFile);
+        if (match) return match.label;
+    }
+    return 'Sistema de Proveedores';
+}
 
 function renderSidebar() {
     const container = document.getElementById('sidebar-container');
@@ -36,24 +45,60 @@ function renderSidebar() {
 
     const inPages = location.pathname.includes('/pages/');
     const base = inPages ? '' : 'pages/';
+    const homeHref = inPages ? '../index.html' : 'index.html';
     const currentFile = location.pathname.split('/').pop();
 
-    const links = SIDEBAR_LINKS.map((link) => {
-        const isActive = currentFile === link.page;
-        return `
-            <a class="sidebar-link ${isActive ? 'active' : ''}" href="${base}${link.page}">
-                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${link.icon}</svg>
-                <span>${link.label}</span>
-            </a>
-        `;
-    }).join('');
+    const groupsHTML = SIDEBAR_GROUPS.map((group) => `
+        <div class="sidebar-group-label">${group.label}</div>
+        ${group.links.map((link) => {
+            const isActive = currentFile === link.page;
+            return `
+                <a class="sidebar-link ${isActive ? 'active' : ''}" href="${base}${link.page}" ${isActive ? 'aria-current="page"' : ''}>
+                    ${icon(link.icon, { size: 17 })}
+                    <span>${link.label}</span>
+                </a>
+            `;
+        }).join('')}
+    `).join('');
 
     container.innerHTML = `
-        <nav class="sidebar">
-            <div class="sidebar-section-label">Navegación</div>
-            ${links}
+        <nav class="sidebar" id="app-sidebar" aria-label="Navegación principal">
+            <a class="sidebar-brand" href="${homeHref}">
+                <span class="sidebar-brand-mark">${icon('logo', { size: 18 })}</span>
+                <span class="sidebar-brand-text">
+                    <strong>Proveedores IA</strong>
+                    <span>Evaluación multicriterio</span>
+                </span>
+            </a>
+            <div class="sidebar-nav">
+                ${groupsHTML}
+            </div>
+            <div class="sidebar-footer">
+                <div class="sidebar-footer-note">
+                    ${icon('info', { size: 14 })}
+                    <span>Motor determinístico activo. Asistente conversacional disponible en una fase posterior.</span>
+                </div>
+            </div>
         </nav>
+        <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
     `;
+
+    const backdrop = document.getElementById('sidebar-backdrop');
+    backdrop.addEventListener('click', () => closeSidebar());
+}
+
+function closeSidebar() {
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('open');
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.toggle('open');
+    if (backdrop) backdrop.classList.toggle('open');
 }
 
 document.addEventListener('DOMContentLoaded', renderSidebar);
