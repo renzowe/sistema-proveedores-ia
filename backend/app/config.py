@@ -11,9 +11,12 @@ class Settings:
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     
+    # El driver (+psycopg2) se deja explícito para que SQLAlchemy no intente
+    # autodetectar otro DBAPI (psycopg v3, pg8000, etc.) si psycopg2 llegara
+    # a fallar al instalarse/importarse en el entorno de despliegue.
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL",
-        "postgresql://postgres:CHANGE_ME@localhost:5432/sistema-proveedores-ia"
+        "postgresql+psycopg2://postgres:CHANGE_ME@localhost:5432/sistema-proveedores-ia"
     )
     PORT: int = int(os.getenv("PORT", 8000))
     HOST: str = os.getenv("HOST", "127.0.0.1")
