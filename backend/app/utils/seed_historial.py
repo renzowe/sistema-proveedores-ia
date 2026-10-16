@@ -1,10 +1,11 @@
 from datetime import date
 from decimal import Decimal
+
 from app.database import SessionLocal, init_db
-from app.models.proveedor import Proveedor
-from app.models.producto import Producto
 from app.models.historial_desempeno import HistorialDesempeno
 from app.models.historial_desempeno_detalle import HistorialDesempenoDetalle
+from app.models.producto import Producto
+from app.models.proveedor import Proveedor
 
 def seed_historial():
     init_db()

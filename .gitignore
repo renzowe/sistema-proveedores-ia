@@ -45,3 +45,8 @@ htmlcov/
 # Operating System
 .DS_Store
 Thumbs.db
+
+# Text
+instrucciones.txt
+PLAN_IMPLEMENTACION.md
+

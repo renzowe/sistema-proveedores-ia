@@ -1,12 +1,14 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import func
-from typing import List, Optional, Dict, Any
 from decimal import Decimal
+from typing import Any, Dict, List, Optional
+
 from fastapi import HTTPException, status
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
 from app.models.historial_desempeno import HistorialDesempeno
 from app.models.historial_desempeno_detalle import HistorialDesempenoDetalle
-from app.models.proveedor import Proveedor
 from app.models.producto import Producto
+from app.models.proveedor import Proveedor
 from app.schemas.historial_desempeno import HistorialDesempenoCreate
 
 class HistorialService:

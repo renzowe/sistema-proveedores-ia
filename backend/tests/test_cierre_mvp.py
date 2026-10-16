@@ -16,9 +16,9 @@ determinístico (`LLM_ENABLED=false`), sin depender de Claude ni de una
 API Key de Anthropic.
 """
 
-from app.config import settings
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.main import app
 
 client = TestClient(app)

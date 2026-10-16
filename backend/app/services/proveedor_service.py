@@ -1,9 +1,11 @@
-from sqlalchemy.orm import Session
 from typing import List, Optional
+
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
 from app.models.proveedor import Proveedor
 from app.schemas.proveedor import ProveedorCreate, ProveedorUpdate
-from app.utils.validaciones import validar_ruc, validar_email, validar_telefono
+from app.utils.validaciones import validar_email, validar_ruc, validar_telefono
 
 class ProveedorService:
     @staticmethod

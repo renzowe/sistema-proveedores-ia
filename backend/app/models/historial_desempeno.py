@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, Numeric, Text, Date, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, Numeric, Text
+from sqlalchemy.orm import relationship
+
 from app.database import Base
 
 class HistorialDesempeno(Base):

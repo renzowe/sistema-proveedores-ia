@@ -1,11 +1,13 @@
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
+
 from app.database import get_db
 from app.schemas.proveedor_producto import (
     ProveedorProductoCreate,
-    ProveedorProductoUpdate,
     ProveedorProductoResponse,
+    ProveedorProductoUpdate,
 )
 from app.services.proveedor_producto_service import ProveedorProductoService
 

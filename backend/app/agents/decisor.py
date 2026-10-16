@@ -1,5 +1,6 @@
-from typing import Dict, Any, List
-from app.utils.calculos import calcular_puntaje_final, obtener_ponderaciones, generar_explicacion_resultado
+from typing import Any, Dict, List
+
+from app.utils.calculos import calcular_puntaje_final, generar_explicacion_resultado, obtener_ponderaciones
 
 class AgenteDecisor:
     """

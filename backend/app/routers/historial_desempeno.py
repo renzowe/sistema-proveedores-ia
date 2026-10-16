@@ -1,6 +1,8 @@
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from typing import List, Optional, Dict, Any
+
 from app.database import get_db
 from app.schemas.historial_desempeno import (
     HistorialDesempenoCreate,

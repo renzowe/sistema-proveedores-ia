@@ -1,9 +1,11 @@
-from sqlalchemy.orm import Session
 from typing import List, Optional
+
 from fastapi import HTTPException, status
-from app.models.proveedor_producto import ProveedorProducto
-from app.models.proveedor import Proveedor
+from sqlalchemy.orm import Session
+
 from app.models.producto import Producto
+from app.models.proveedor import Proveedor
+from app.models.proveedor_producto import ProveedorProducto
 from app.schemas.proveedor_producto import ProveedorProductoCreate, ProveedorProductoUpdate
 
 class ProveedorProductoService:

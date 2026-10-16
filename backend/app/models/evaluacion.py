@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy.orm import relationship
+
 from app.database import Base
 
 class Evaluacion(Base):

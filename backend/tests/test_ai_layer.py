@@ -11,14 +11,14 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.config import settings
 from app.ai.llm_client import LLMClient, LLMRequest, LLMResponse, LLMUnavailableError
 from app.ai.parser_solicitud import (
     ProductoInterpretado,
     SolicitudInterpretada,
     interpretar_solicitud,
 )
+from app.config import settings
+from app.main import app
 
 client = TestClient(app)
 

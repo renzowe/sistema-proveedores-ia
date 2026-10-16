@@ -1,5 +1,6 @@
-from typing import Dict, Any, List
-from app.utils.calculos import calcular_puntaje_riesgo, calcular_puntaje_historial
+from typing import Any, Dict, List
+
+from app.utils.calculos import calcular_puntaje_historial, calcular_puntaje_riesgo
 
 class AgenteRiesgo:
     """

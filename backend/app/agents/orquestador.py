@@ -1,9 +1,10 @@
-from typing import Dict, Any, List, Optional
-from app.agents.financiero import AgenteFinanciero
+from typing import Any, Dict, List, Optional
+
 from app.agents.calidad import AgenteCalidad
+from app.agents.decisor import AgenteDecisor
+from app.agents.financiero import AgenteFinanciero
 from app.agents.logistico import AgenteLogistico
 from app.agents.riesgo import AgenteRiesgo
-from app.agents.decisor import AgenteDecisor
 
 class OrquestadorAgentes:
     """

@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, Text, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, Text
 from sqlalchemy.orm import relationship
+
 from app.database import Base
 
 class EvaluacionProducto(Base):

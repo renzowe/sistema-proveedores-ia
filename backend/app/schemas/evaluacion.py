@@ -1,8 +1,10 @@
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
-from app.schemas.evaluacion_producto import EvaluacionProductoCreate, EvaluacionProductoResponse
+from typing import List, Optional
+
+from pydantic import BaseModel
+
 from app.schemas.evaluacion_detalle import EvaluacionDetalleResponse
+from app.schemas.evaluacion_producto import EvaluacionProductoCreate, EvaluacionProductoResponse
 
 class EvaluacionBase(BaseModel):
     titulo: str

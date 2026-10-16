@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, Numeric, Text, Boolean, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
 from datetime import datetime
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, Text
+from sqlalchemy.orm import relationship
+
 from app.database import Base
 
 class ProveedorProducto(Base):

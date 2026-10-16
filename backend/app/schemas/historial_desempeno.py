@@ -1,12 +1,14 @@
-from pydantic import BaseModel
-from typing import Optional, List
-from decimal import Decimal
 from datetime import date, datetime
-from app.schemas.proveedor import ProveedorResponse
+from decimal import Decimal
+from typing import List, Optional
+
+from pydantic import BaseModel
+
 from app.schemas.historial_desempeno_detalle import (
     HistorialDesempenoDetalleCreate,
     HistorialDesempenoDetalleResponse
 )
+from app.schemas.proveedor import ProveedorResponse
 
 class HistorialDesempenoBase(BaseModel):
     proveedor_id: int

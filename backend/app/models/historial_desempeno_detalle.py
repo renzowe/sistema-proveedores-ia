@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, Numeric, Text, ForeignKey
+from sqlalchemy import Column, ForeignKey, Integer, Numeric, Text
 from sqlalchemy.orm import relationship
+
 from app.database import Base
 
 class HistorialDesempenoDetalle(Base):

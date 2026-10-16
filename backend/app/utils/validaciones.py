@@ -1,4 +1,5 @@
 import re
+
 from fastapi import HTTPException, status
 
 def validar_ruc(ruc: str) -> bool:

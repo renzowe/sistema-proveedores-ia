@@ -1,4 +1,5 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 from app.utils.calculos import calcular_puntaje_calidad
 
 class AgenteCalidad:

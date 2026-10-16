@@ -1,8 +1,9 @@
-from app.database import SessionLocal, init_db
-from app.models.proveedor import Proveedor
-from app.models.producto import Producto
-from app.models.proveedor_producto import ProveedorProducto
 from decimal import Decimal
+
+from app.database import SessionLocal, init_db
+from app.models.producto import Producto
+from app.models.proveedor import Proveedor
+from app.models.proveedor_producto import ProveedorProducto
 
 def seed():
     init_db()

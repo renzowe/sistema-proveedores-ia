@@ -1,6 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional
 from decimal import Decimal
+from typing import Optional
+
+from pydantic import BaseModel
+
 from app.schemas.producto import ProductoResponse
 
 class HistorialDesempenoDetalleBase(BaseModel):

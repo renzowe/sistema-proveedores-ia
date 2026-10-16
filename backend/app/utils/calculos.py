@@ -1,5 +1,5 @@
-from typing import Dict, Any, Optional
 from decimal import Decimal
+from typing import Any, Dict, Optional
 
 # Ponderaciones base según la prioridad de la evaluación
 PONDERACIONES = {

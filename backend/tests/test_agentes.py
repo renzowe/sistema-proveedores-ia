@@ -1,16 +1,18 @@
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+
 from app.agents import (
-    AgenteFinanciero,
     AgenteCalidad,
+    AgenteDecisor,
+    AgenteFinanciero,
     AgenteLogistico,
     AgenteRiesgo,
-    AgenteDecisor,
-    OrquestadorAgentes
+    OrquestadorAgentes,
 )
+from app.main import app
 
 client = TestClient(app)
+
 
 def test_agente_financiero():
     agente = AgenteFinanciero()
@@ -24,6 +26,7 @@ def test_agente_financiero():
     assert res[0]["es_mas_economico"] is True
     assert res[1]["puntaje_precio"] == 50.0
     assert "FAVORABLE" in res[0]["dictamen_financiero"]
+
 
 def test_agente_calidad():
     agente = AgenteCalidad()
@@ -42,11 +45,22 @@ def test_agente_calidad():
     assert "EXCELENTE" in res[0]["dictamen_calidad"]
     assert "ALERTA" in res[1]["dictamen_calidad"]
 
+
 def test_agente_logistico():
     agente = AgenteLogistico()
     candidatos = [
-        {"proveedor_id": 1, "razon_social": "Prov Rapido", "tiempo_entrega_max_dias": 3, "cumple_plazo_maximo": True},
-        {"proveedor_id": 2, "razon_social": "Prov Lento", "tiempo_entrega_max_dias": 10, "cumple_plazo_maximo": False},
+        {
+            "proveedor_id": 1,
+            "razon_social": "Prov Rapido",
+            "tiempo_entrega_max_dias": 3,
+            "cumple_plazo_maximo": True,
+        },
+        {
+            "proveedor_id": 2,
+            "razon_social": "Prov Lento",
+            "tiempo_entrega_max_dias": 10,
+            "cumple_plazo_maximo": False,
+        },
     ]
     res = agente.analizar(candidatos, min_tiempo_global=3, entrega_maxima_dias=5)
     assert len(res) == 2
@@ -54,6 +68,7 @@ def test_agente_logistico():
     assert res[1]["cumple_plazo_maximo"] is False
     assert "DESTACADO" in res[0]["dictamen_logistico"]
     assert "DESFAVORABLE" in res[1]["dictamen_logistico"]
+
 
 def test_orquestador_y_endpoint_informe_agentes():
     # 1. Obtener productos de prueba
@@ -71,8 +86,8 @@ def test_orquestador_y_endpoint_informe_agentes():
         "prioridad": "balanceado",
         "productos": [
             {"producto_id": p1["id"], "cantidad": 15},
-            {"producto_id": p2["id"], "cantidad": 15}
-        ]
+            {"producto_id": p2["id"], "cantidad": 15},
+        ],
     }
     create_res = client.post("/api/v1/evaluaciones/", json=eval_payload)
     assert create_res.status_code == 201
