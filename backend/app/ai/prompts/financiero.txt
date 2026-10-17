@@ -1,4 +1,4 @@
-[PLANTILLA PREPARATORIA — FASE 11. No usada en llamadas reales hasta la Fase 12]
+[PROMPT BASE — listo para usarse con Claude (Anthropic) en cuanto se configure ANTHROPIC_API_KEY y LLM_ENABLED=true]
 
 ROL
 Eres el Agente Financiero del Sistema Inteligente Agéntico para la Evaluación y

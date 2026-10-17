@@ -5,9 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evaluaciones - Sistema IA</title>
-    <link rel="stylesheet" href="../css/styles.css">
-    <link rel="stylesheet" href="../css/formularios.css">
-    <link rel="stylesheet" href="../css/evaluaciones.css">
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="../css/styles.css?v=20261017">
+    <link rel="stylesheet" href="../css/formularios.css?v=20261017">
+    <link rel="stylesheet" href="../css/evaluaciones.css?v=20261017">
 </head>
 
 <body>
@@ -24,73 +25,87 @@
                     </div>
                 </div>
 
-                <div class="card mb-1">
-                    <div class="card-header">
-                        <div>
-                            <h2>Nueva evaluación</h2>
-                            <div class="card-subtitle">El cálculo de puntajes es 100% determinístico — ver metodología en el detalle</div>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <form id="form-evaluacion">
-                            <div class="form-grid">
-                                <div class="form-group full">
-                                    <label>Título de la solicitud<span class="required">*</span></label>
-                                    <input type="text" name="titulo" required placeholder="Ej: Adquisición de equipos de laboratorio">
+                <div class="selector-vista" id="selector-vista-evaluacion">
+                    <button type="button" class="tab-btn active" data-vista="ambos">Ambos</button>
+                    <button type="button" class="tab-btn" data-vista="chat">Solo chat</button>
+                    <button type="button" class="tab-btn" data-vista="formulario">Solo formulario</button>
+                </div>
+
+                <div class="asistente-layout vista-ambos" id="asistente-layout">
+                    <div class="columna-chat" id="asistente-chat-container"></div>
+
+                    <div class="columna-formulario">
+                        <div class="card mb-1">
+                            <div class="card-header">
+                                <div>
+                                    <h2>Nueva evaluación</h2>
+                                    <div class="card-subtitle">El cálculo de puntajes es 100% determinístico — ver metodología en el detalle</div>
                                 </div>
-                                <div class="form-group full">
-                                    <label>Descripción de la necesidad</label>
-                                    <textarea name="descripcion_necesidad" placeholder="Describe el contexto o requerimiento general..."></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label>Plazo máximo de entrega (días)</label>
-                                    <input type="number" min="1" name="entrega_maxima_dias" placeholder="Ej: 15">
-                                </div>
-                                <div class="form-group full">
-                                    <label>Prioridad de evaluación</label>
-                                    <div class="priority-grid">
-                                        <div class="priority-option">
-                                            <input type="radio" name="prioridad" id="prioridad-precio" value="precio">
-                                            <label for="prioridad-precio"><strong>Precio</strong>Prioriza el menor costo total</label>
+                            </div>
+                            <div class="card-body">
+                                <form id="form-evaluacion">
+                                    <div class="form-grid">
+                                        <div class="form-group full">
+                                            <label>Título de la solicitud<span class="required">*</span></label>
+                                            <input type="text" name="titulo" required placeholder="Ej: Adquisición de equipos de laboratorio">
                                         </div>
-                                        <div class="priority-option">
-                                            <input type="radio" name="prioridad" id="prioridad-calidad" value="calidad">
-                                            <label for="prioridad-calidad"><strong>Calidad</strong>Prioriza historial de calidad</label>
+                                        <div class="form-group full">
+                                            <label>Descripción de la necesidad</label>
+                                            <textarea name="descripcion_necesidad" placeholder="Describe el contexto o requerimiento general..."></textarea>
                                         </div>
-                                        <div class="priority-option">
-                                            <input type="radio" name="prioridad" id="prioridad-logistica" value="logistica">
-                                            <label for="prioridad-logistica"><strong>Logística</strong>Prioriza tiempos de entrega</label>
+                                        <div class="form-group">
+                                            <label>Plazo máximo de entrega (días)</label>
+                                            <input type="number" min="1" name="entrega_maxima_dias" placeholder="Ej: 15">
                                         </div>
-                                        <div class="priority-option">
-                                            <input type="radio" name="prioridad" id="prioridad-balanceado" value="balanceado" checked>
-                                            <label for="prioridad-balanceado"><strong>Balanceado</strong>Pondera todos los criterios</label>
+                                        <div class="form-group full">
+                                            <label>Prioridad de evaluación</label>
+                                            <div class="priority-grid">
+                                                <div class="priority-option">
+                                                    <input type="radio" name="prioridad" id="prioridad-precio" value="precio">
+                                                    <label for="prioridad-precio"><strong>Precio</strong>Prioriza el menor costo total</label>
+                                                </div>
+                                                <div class="priority-option">
+                                                    <input type="radio" name="prioridad" id="prioridad-calidad" value="calidad">
+                                                    <label for="prioridad-calidad"><strong>Calidad</strong>Prioriza historial de calidad</label>
+                                                </div>
+                                                <div class="priority-option">
+                                                    <input type="radio" name="prioridad" id="prioridad-logistica" value="logistica">
+                                                    <label for="prioridad-logistica"><strong>Logística</strong>Prioriza tiempos de entrega</label>
+                                                </div>
+                                                <div class="priority-option">
+                                                    <input type="radio" name="prioridad" id="prioridad-balanceado" value="balanceado" checked>
+                                                    <label for="prioridad-balanceado"><strong>Balanceado</strong>Pondera todos los criterios</label>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            <h4>Productos requeridos</h4>
-                            <div class="table-wrapper">
-                                <table class="product-line-table">
-                                    <thead>
-                                        <tr>
-                                            <th style="width:32%">Producto</th>
-                                            <th>Cantidad</th>
-                                            <th>Especificaciones</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="eval-lineas-body"></tbody>
-                                </table>
-                            </div>
-                            <button type="button" class="btn btn-secondary btn-sm add-line-btn" id="btn-agregar-linea-eval">+ Agregar producto</button>
+                                    <h4>Productos requeridos</h4>
+                                    <div class="table-wrapper">
+                                        <table class="product-line-table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:32%">Producto</th>
+                                                    <th>Cantidad</th>
+                                                    <th>Especificaciones</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="eval-lineas-body"></tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary btn-sm add-line-btn" id="btn-agregar-linea-eval">+ Agregar producto</button>
 
-                            <div class="mt-1 text-right">
-                                <button type="submit" class="btn btn-primary" id="btn-crear-evaluacion">Crear evaluación</button>
+                                    <div class="mt-1 text-right">
+                                        <button type="submit" class="btn btn-primary" id="btn-confirmar-evaluar">Confirmar y evaluar</button>
+                                    </div>
+                                </form>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
+
+                <div id="resultado-evaluacion-container" class="mb-1"></div>
 
                 <div class="card">
                     <div class="filter-bar">
@@ -129,16 +144,15 @@
     </div>
 
     <div id="modal-root"></div>
-    <div id="chat-container"></div>
 
-    <script src="../js/components/icons.js"></script>
-    <script src="../js/api.js"></script>
-    <script src="../js/components/ui.js"></script>
-    <script src="../js/components/navbar.js"></script>
-    <script src="../js/components/sidebar.js"></script>
-    <script src="../js/components/modal.js"></script>
-    <script src="../js/components/chat.js"></script>
-    <script src="../js/evaluaciones.js"></script>
+    <script src="../js/components/icons.js?v=20261017"></script>
+    <script src="../js/api.js?v=20261017"></script>
+    <script src="../js/components/ui.js?v=20261017"></script>
+    <script src="../js/components/navbar.js?v=20261017"></script>
+    <script src="../js/components/sidebar.js?v=20261017"></script>
+    <script src="../js/components/modal.js?v=20261017"></script>
+    <script src="../js/components/asistente.js?v=20261017"></script>
+    <script src="../js/evaluaciones.js?v=20261017"></script>
 </body>
 
 </html>

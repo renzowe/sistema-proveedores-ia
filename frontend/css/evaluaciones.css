@@ -231,3 +231,184 @@
     display: inline-flex;
     color: var(--ai-accent);
 }
+
+/* ---------- Producto sin coincidencia en el catálogo ---------- */
+
+tr.linea-sin-coincidencia > td:first-child {
+    background: var(--warning-soft);
+}
+
+/* ---------- Asistente conversacional (chat + formulario) ---------- */
+
+.selector-vista {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+}
+
+/* .tab-btn es display:flex (nivel de bloque); aquí se fuerza inline-flex
+   para que los botones nunca se apilen, aunque falle el flex del padre. */
+.selector-vista .tab-btn {
+    display: inline-flex;
+    justify-content: center;
+}
+
+@media (max-width: 640px) {
+    .selector-vista .tab-btn {
+        flex: 1 1 0;
+        padding-left: 0.4rem;
+        padding-right: 0.4rem;
+    }
+}
+
+.asistente-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+
+.asistente-layout.vista-chat,
+.asistente-layout.vista-formulario {
+    grid-template-columns: 1fr;
+}
+
+.asistente-layout.vista-chat .columna-formulario,
+.asistente-layout.vista-formulario .columna-chat {
+    display: none;
+}
+
+@media (max-width: 1100px) {
+    .asistente-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.asistente-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 420px;
+}
+
+.asistente-panel .card-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.chat-aviso {
+    padding: 0.85rem 1.1rem 0;
+}
+
+.chat-contexto-chip {
+    color: var(--ai-accent);
+}
+
+.chat-mensajes {
+    flex: 1;
+    min-height: 260px;
+    max-height: 460px;
+    overflow-y: auto;
+    padding: 1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.chat-burbuja {
+    max-width: 85%;
+    padding: 0.55rem 0.8rem;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* pre-wrap solo sobre el texto: aplicado a toda la burbuja también
+   mostraba como espacio en blanco la indentación del template HTML. */
+.chat-burbuja-texto {
+    white-space: pre-wrap;
+}
+
+.chat-burbuja.usuario {
+    align-self: flex-end;
+    background: var(--primary-soft);
+    color: var(--text-primary);
+}
+
+.chat-burbuja.asistente {
+    align-self: flex-start;
+    background: var(--ai-soft);
+    border: 1px solid var(--ai-border);
+    color: var(--text-primary);
+}
+
+.chat-burbuja.error {
+    background: var(--danger-soft);
+    border: 1px solid var(--danger-border);
+}
+
+.chat-burbuja-badge {
+    display: block;
+    margin-bottom: 0.3rem;
+    width: fit-content;
+}
+
+.chat-loading {
+    align-self: flex-start;
+}
+
+.chat-entrada {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    padding: 0.85rem 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.chat-entrada textarea {
+    flex: 1;
+    resize: none;
+    font-family: inherit;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+}
+
+.chat-debug-panel {
+    margin: 0 1rem 0.85rem;
+    font-size: 0.72rem;
+    color: var(--text-tertiary);
+}
+
+.chat-debug-panel pre {
+    max-height: 200px;
+    overflow: auto;
+    background: var(--surface-alt);
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+}
+
+/* ---------- Resultado inline de "Confirmar y evaluar" ---------- */
+
+.resultado-ganador {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.1rem;
+    border-radius: var(--radius-md);
+    background: var(--success-soft);
+    border: 1px solid var(--success-border);
+    color: var(--text-primary);
+}
+
+.resultado-desactualizado {
+    opacity: 0.75;
+}

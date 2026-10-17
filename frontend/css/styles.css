@@ -1158,6 +1158,7 @@ table.data-table tbody tr:hover {
 
 .toast.success { border-left-color: var(--success); }
 .toast.error { border-left-color: var(--danger); }
+.toast.warning { border-left-color: var(--warning); }
 
 @keyframes slideIn {
     from { opacity: 0; transform: translateX(16px); }

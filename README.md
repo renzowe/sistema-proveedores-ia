@@ -29,9 +29,16 @@ Sistema web de apoyo a la decisión para evaluar proveedores y obtener recomenda
 
 ## Inteligencia Artificial (Claude)
 
-El proyecto deja preparada la arquitectura para integrar Claude mediante la
-API de Anthropic (`backend/app/ai/`), pero **esa integración real todavía no
-está activa**. Por defecto (`LLM_ENABLED=false`), el sistema funciona de
-forma completa con el motor determinístico y los agentes especializados, sin
-depender de ninguna API externa ni credencial. Ver `backend/README.md` para
-el detalle de esta capa y las variables de entorno asociadas.
+El proyecto integra un **asistente conversacional** (Claude, vía API de
+Anthropic) en la pestaña Evaluaciones (`backend/app/ai/` +
+`AsistenteService`): ayuda a armar el borrador de una evaluación en
+lenguaje natural y a explicar resultados ya calculados, sin participar en
+el cálculo de puntajes ni en la recomendación — eso siempre lo decide el
+motor determinístico. Mientras no haya una `ANTHROPIC_API_KEY` real
+configurada, el asistente funciona igual en un **modo demostración**
+determinístico (sin llamadas externas), claramente marcado en cada
+respuesta. Puede desactivarse por completo con `LLM_ENABLED=false`, en cuyo
+caso el sistema funciona de forma completa con el motor determinístico y
+los agentes especializados, sin depender de ninguna API externa ni
+credencial. Ver `backend/README.md` para el detalle de esta capa y las
+variables de entorno asociadas.

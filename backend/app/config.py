@@ -22,13 +22,14 @@ class Settings:
     PORT: int = int(os.getenv("PORT", 8000))
     HOST: str = os.getenv("HOST", "127.0.0.1")
     
-    # Configuración de la capa de IA (Fase 11: preparación arquitectónica).
-    # LLM_ENABLED controla si la capa `app/ai` puede intentar comunicarse con Claude.
-    # Por defecto permanece desactivada y el sistema funciona en modo determinístico puro.
+    # Configuración de la capa de IA (Claude, vía API de Anthropic).
+    # LLM_ENABLED controla si la capa `app/ai` puede intentar comunicarse con el LLM.
+    # Con LLM_ENABLED=false (o sin ANTHROPIC_API_KEY) el sistema sigue
+    # funcionando en modo determinístico puro — la arquitectura ya está
+    # implementada (no es un stub): solo falta una API Key real para activarla.
     LLM_ENABLED: bool = os.getenv("LLM_ENABLED", "false").lower() in ("true", "1", "yes")
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
-    CLAUDE_MODEL: str = os.getenv("CLAUDE_MODEL", "claude-sonnet-5")
+    CLAUDE_MODEL: str = os.getenv("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
     CLAUDE_MAX_TOKENS: int = int(os.getenv("CLAUDE_MAX_TOKENS", "1024"))
-    CLAUDE_TEMPERATURE: float = float(os.getenv("CLAUDE_TEMPERATURE", "0.2"))
 
 settings = Settings()

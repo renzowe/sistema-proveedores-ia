@@ -76,7 +76,7 @@ function renderSidebar() {
             <div class="sidebar-footer">
                 <div class="sidebar-footer-note">
                     ${icon('info', { size: 14 })}
-                    <span>Motor determinístico activo. Asistente conversacional disponible en una fase posterior.</span>
+                    <span>Motor determinístico activo. Asistente conversacional disponible en Evaluaciones (modo demostración sin API Key configurada).</span>
                 </div>
             </div>
         </nav>

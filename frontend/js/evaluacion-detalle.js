@@ -31,6 +31,7 @@ const AGENTES_TABS = [
 let evaluacionActual = null;
 let informeAgentesActual = null;
 let proveedorSeleccionadoId = null;
+let asistenteDetalle = null;
 
 function obtenerEvaluacionId() {
     const params = new URLSearchParams(window.location.search);
@@ -39,6 +40,12 @@ function obtenerEvaluacionId() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const id = obtenerEvaluacionId();
+    asistenteDetalle = initAsistente({
+        modo: 'explicacion',
+        contenedorId: 'asistente-chat-container',
+        evaluacionId: id ? Number(id) : null,
+        contextoLabel: id ? `Contexto: Evaluación #${id}` : 'Sin evaluación seleccionada',
+    });
     if (!id) {
         document.getElementById('detalle-content').innerHTML = renderAlert({ type: 'danger', title: 'Evaluación no especificada', body: 'No se indicó un identificador de evaluación válido en la URL.' });
         renderIcons(document.getElementById('detalle-content'));
@@ -103,6 +110,8 @@ async function cargarEvaluacion(id) {
         document.getElementById('detalle-titulo').textContent = evaluacionActual.titulo;
         document.getElementById('detalle-subtitulo').textContent =
             evaluacionActual.descripcion_necesidad || `${(evaluacionActual.productos_solicitados || []).length} producto(s) solicitado(s)`;
+
+        asistenteDetalle?.setContexto(`Contexto: Evaluación #${id} · ${evaluacionActual.titulo}`);
 
         const procesada = (evaluacionActual.detalles_resultado || []).length > 0;
         if (!procesada) {
@@ -248,6 +257,7 @@ async function renderProcesada(id) {
                 <div class="loading-state"><div class="spinner"></div><span>Consultando informe agéntico...</span></div>
             </div>
         </div>
+
     `;
 
     contenido.querySelectorAll('[data-ver-agentes]').forEach((btn) =>

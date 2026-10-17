@@ -1,11 +1,15 @@
+import json
 from datetime import datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.agents.orquestador import OrquestadorAgentes
+from app.ai.llm_client import LLMClient, LLMRequest, LLMUnavailableError
+from app.ai.parser_solicitud import interpretar_solicitud
 from app.models.evaluacion import Evaluacion
 from app.models.evaluacion_detalle import EvaluacionDetalle
 from app.models.evaluacion_producto import EvaluacionProducto
@@ -15,7 +19,121 @@ from app.models.proveedor_producto import ProveedorProducto
 from app.schemas.evaluacion import EvaluacionCreate
 from app.services.historial_service import HistorialService
 
+
+def _singularizar(palabra: str) -> str:
+    """Normalización simple de plurales en español (regular, no exhaustiva)."""
+    if len(palabra) > 4 and palabra.endswith("es"):
+        return palabra[:-2]
+    if len(palabra) > 3 and palabra.endswith("s"):
+        return palabra[:-1]
+    return palabra
+
+
+def _buscar_producto_similar(nombre_detectado: str, catalogo: List[Producto]) -> Optional[Producto]:
+    """
+    Empareja el nombre libre que detectó el parser de lenguaje natural
+    contra el catálogo real de productos. Es una heurística simple
+    (coincidencia por substring y solapamiento de palabras, tolerante a
+    plurales regulares) deliberadamente conservadora: si no hay una
+    coincidencia razonable, devuelve None en vez de adivinar — la
+    resolución final la confirma siempre el usuario en el formulario,
+    nunca el LLM.
+    """
+    nombre_lower = nombre_detectado.lower().strip()
+    if not nombre_lower:
+        return None
+
+    mejor_producto = None
+    mejor_score = 0
+    for producto in catalogo:
+        producto_lower = producto.nombre.lower()
+        if nombre_lower in producto_lower or producto_lower in nombre_lower:
+            score = min(len(nombre_lower), len(producto_lower))
+        else:
+            palabras_detectadas = {_singularizar(w) for w in nombre_lower.split()}
+            palabras_producto = {_singularizar(w) for w in producto_lower.split()}
+            score = len(palabras_detectadas & palabras_producto) * 10
+
+        if score > mejor_score:
+            mejor_score = score
+            mejor_producto = producto
+
+    return mejor_producto if mejor_score > 0 else None
+
+
+def _datos_reales_para_explicacion(resultados: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Recorta `obtener_resultados()` a únicamente los campos reales (ya
+    calculados por el motor determinístico) que un LLM puede usar para
+    explicar un resultado — nunca más que esto, para que no tenga forma de
+    inventar proveedores, puntajes ni recomendaciones. Usado tanto por
+    `generar_explicacion_ia` como por `AsistenteService` (modo explicación).
+    """
+    return {
+        "titulo": resultados["titulo"],
+        "prioridad_aplicada": resultados["prioridad"],
+        "ranking": [
+            {
+                "proveedor": r["proveedor_nombre"],
+                "recomendado": r["recomendado"],
+                "puntajes": {
+                    "precio": r["puntaje_precio"],
+                    "calidad": r["puntaje_calidad"],
+                    "logistica": r["puntaje_logistica"],
+                    "historial": r["puntaje_historial"],
+                    "riesgo": r["puntaje_riesgo"],
+                    "final": r["puntaje_final"],
+                },
+            }
+            for r in resultados["ranking"]
+        ],
+    }
+
+
 class EvaluacionService:
+    @staticmethod
+    def interpretar_solicitud_nl(db: Session, texto: str) -> Dict[str, Any]:
+        """
+        Transforma una solicitud en lenguaje natural en una propuesta de
+        formulario de evaluación (productos, prioridad, plazo), usando el
+        LLM configurado (Claude) cuando está disponible y cayendo al modo
+        heurístico si no.
+
+        Esta función NO crea ninguna evaluación: solo devuelve una
+        PROPUESTA para que el usuario la revise, corrija y confirme en el
+        formulario — el LLM interpreta, pero no decide ni persiste nada.
+        """
+        if not texto or not texto.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El texto de la solicitud no puede estar vacío."
+            )
+
+        llm_client = LLMClient()
+        interpretada = interpretar_solicitud(texto, llm_client=llm_client)
+
+        catalogo = db.query(Producto).filter(Producto.estado == "Activo").all()
+
+        productos_propuestos = []
+        for p in interpretada.productos:
+            coincidencia = _buscar_producto_similar(p.nombre_detectado, catalogo)
+            productos_propuestos.append({
+                "nombre_detectado": p.nombre_detectado,
+                "cantidad": p.cantidad,
+                "especificaciones": p.especificaciones,
+                "producto_id": coincidencia.id if coincidencia else None,
+                "producto_nombre_catalogo": coincidencia.nombre if coincidencia else None,
+            })
+
+        return {
+            "texto_original": interpretada.texto_original,
+            "interpretado_por": interpretada.interpretado_por,
+            "confianza": interpretada.confianza,
+            "prioridad_sugerida": interpretada.prioridad_sugerida,
+            "entrega_maxima_dias": interpretada.entrega_maxima_dias,
+            "productos": productos_propuestos,
+        }
+
     @staticmethod
     def listar(
         db: Session,
@@ -323,6 +441,65 @@ class EvaluacionService:
             "estado": evaluacion.estado,
             "proveedor_recomendado": next((r for r in resultados if r["recomendado"]), None),
             "ranking": resultados
+        }
+
+    @staticmethod
+    def generar_explicacion_ia(db: Session, evaluacion_id: int) -> Dict[str, Any]:
+        """
+        Genera una explicación en lenguaje natural de los resultados ya
+        calculados por el motor determinístico, usando el LLM configurado
+        (Claude, vía Anthropic).
+
+        El LLM NO calcula ni modifica ningún puntaje: recibe únicamente el
+        ranking y la recomendación ya persistidos (fuente de verdad =
+        PostgreSQL + motor determinístico) y produce solo texto explicativo.
+        Si el LLM está desactivado, sin API Key, o falla, se devuelve un
+        error controlado — nunca se inventan datos para completar la
+        respuesta.
+        """
+        resultados = EvaluacionService.obtener_resultados(db, evaluacion_id)
+        if not resultados.get("ranking"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Esta evaluación aún no ha sido procesada; no hay resultados que explicar."
+            )
+
+        llm_client = LLMClient()
+        if not llm_client.esta_disponible():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="El asistente de IA no está disponible (LLM_ENABLED=false o falta ANTHROPIC_API_KEY)."
+            )
+
+        prompt_path = Path(__file__).resolve().parent.parent / "ai" / "prompts" / "decisor.txt"
+        prompt_base = prompt_path.read_text(encoding="utf-8")
+
+        datos_reales = _datos_reales_para_explicacion(resultados)
+
+        prompt_final = (
+            f"{prompt_base}\n\n"
+            "DATOS REALES DE ESTA EVALUACIÓN (única fuente permitida; no uses "
+            "ningún dato fuera de este bloque):\n"
+            f"{json.dumps(datos_reales, ensure_ascii=False, indent=2)}"
+        )
+
+        try:
+            respuesta = llm_client.generate(LLMRequest(
+                prompt=prompt_final,
+                contexto=datos_reales,
+                agente="decisor",
+            ))
+        except LLMUnavailableError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"No se pudo generar la explicación con IA: {exc}"
+            )
+
+        return {
+            "evaluacion_id": evaluacion_id,
+            "generado_por": respuesta.proveedor,
+            "modelo": respuesta.modelo,
+            "explicacion": respuesta.contenido,
         }
 
     @staticmethod

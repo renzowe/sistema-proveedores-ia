@@ -18,9 +18,10 @@ function renderChatWidget() {
             <div class="chat-panel-body">
                 <span class="icon-tile ai">${icon('sparkles', { size: 17 })}</span>
                 <p style="margin:0;font-size:0.82rem;">
-                    Un asistente conversacional (Claude, vía API de Anthropic) está planificado para una
-                    fase posterior. No reemplazará el motor de decisión determinístico: solo ayudará a
-                    interpretar solicitudes y explicar resultados ya calculados por el sistema.
+                    Un asistente conversacional (Claude, vía API de Anthropic) está planificado
+                    para una fase posterior: ayudará a interpretar solicitudes en lenguaje natural
+                    y a explicar resultados ya calculados. En ningún caso reemplazará al motor de
+                    decisión determinístico.
                 </p>
             </div>
             <div class="chat-panel-footer">
