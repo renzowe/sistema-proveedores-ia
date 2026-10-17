@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import List
 
 from dotenv import load_dotenv
 
@@ -21,7 +22,25 @@ class Settings:
     )
     PORT: int = int(os.getenv("PORT", 8000))
     HOST: str = os.getenv("HOST", "127.0.0.1")
-    
+
+    # Orígenes (dominios del frontend) autorizados por CORS, separados por
+    # comas. Sin valor, solo se aceptan los servidores locales de desarrollo;
+    # en producción debe definirse con la URL pública del frontend.
+    CORS_ORIGINS: List[str] = [
+        origen.strip()
+        for origen in os.getenv(
+            "CORS_ORIGINS",
+            "http://localhost:5500,http://127.0.0.1:5500",
+        ).split(",")
+        if origen.strip()
+    ]
+
+    # Límites de uso del asistente conversacional (protegen el presupuesto de
+    # la API de Anthropic frente a abuso: el endpoint es público).
+    ASISTENTE_LIMITE_POR_IP: int = int(os.getenv("ASISTENTE_LIMITE_POR_IP", "20"))
+    ASISTENTE_VENTANA_SEGUNDOS: int = int(os.getenv("ASISTENTE_VENTANA_SEGUNDOS", "600"))
+    ASISTENTE_LIMITE_DIARIO: int = int(os.getenv("ASISTENTE_LIMITE_DIARIO", "200"))
+
     # Configuración de la capa de IA (Claude, vía API de Anthropic).
     # LLM_ENABLED controla si la capa `app/ai` puede intentar comunicarse con el LLM.
     # Con LLM_ENABLED=false (o sin ANTHROPIC_API_KEY) el sistema sigue

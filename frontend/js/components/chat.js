@@ -1,41 +1,21 @@
 /* ============================================================
-   Componente: Asistente conversacional — panel visual (Fase 12)
+   Componente: acceso directo al asistente conversacional
+   El asistente vive en la pestaña Evaluaciones; este botón flotante
+   lleva allí desde el resto de páginas, con la vista "Solo chat".
    ============================================================ */
 
-function renderChatWidget() {
+function renderAccesoAsistente() {
     const container = document.getElementById('chat-container');
     if (!container) return;
 
-    container.innerHTML = `
-        <div class="chat-panel" id="chat-panel">
-            <div class="chat-panel-header">
-                <span class="chat-panel-header-title">
-                    ${icon('sparkles', { size: 16 })}
-                    Asistente conversacional
-                </span>
-                <span class="badge badge-neutral">Próximamente</span>
-            </div>
-            <div class="chat-panel-body">
-                <span class="icon-tile ai">${icon('sparkles', { size: 17 })}</span>
-                <p style="margin:0;font-size:0.82rem;">
-                    Un asistente conversacional (Claude, vía API de Anthropic) está planificado
-                    para una fase posterior: ayudará a interpretar solicitudes en lenguaje natural
-                    y a explicar resultados ya calculados. En ningún caso reemplazará al motor de
-                    decisión determinístico.
-                </p>
-            </div>
-            <div class="chat-panel-footer">
-                <input type="text" placeholder="Disponible próximamente…" disabled aria-disabled="true">
-            </div>
-        </div>
-        <button class="chat-fab" id="chat-fab-btn" aria-label="Abrir asistente conversacional" aria-haspopup="dialog">
-            ${icon('sparkles', { size: 21 })}
-        </button>
-    `;
+    const enCarpetaPages = window.location.pathname.includes('/pages/');
+    const href = `${enCarpetaPages ? '' : 'pages/'}evaluaciones.html?vista=chat`;
 
-    const fab = document.getElementById('chat-fab-btn');
-    const panel = document.getElementById('chat-panel');
-    fab.addEventListener('click', () => panel.classList.toggle('open'));
+    container.innerHTML = `
+        <a class="chat-fab" href="${href}" aria-label="Abrir el asistente conversacional" title="Asistente conversacional">
+            ${icon('sparkles', { size: 21 })}
+        </a>
+    `;
 }
 
-document.addEventListener('DOMContentLoaded', renderChatWidget);
+document.addEventListener('DOMContentLoaded', renderAccesoAsistente);

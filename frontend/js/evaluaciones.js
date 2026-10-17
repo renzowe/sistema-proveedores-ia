@@ -80,17 +80,30 @@ async function cargarProductosParaEvaluacion() {
 
 /* ---------------- Selector de vista (Ambos / Solo chat / Solo formulario) --------------- */
 
+const VISTAS_EVALUACION = ['ambos', 'chat', 'formulario'];
+
+function seleccionarVista(vista) {
+    document.querySelectorAll('#selector-vista-evaluacion .tab-btn').forEach((b) => b.classList.toggle('active', b.dataset.vista === vista));
+
+    const layout = document.getElementById('asistente-layout');
+    layout.classList.remove(...VISTAS_EVALUACION.map((v) => `vista-${v}`));
+    layout.classList.add(`vista-${vista}`);
+}
+
 function wireSelectorVista() {
     document.getElementById('selector-vista-evaluacion').addEventListener('click', (e) => {
         const btn = e.target.closest('[data-vista]');
-        if (!btn) return;
-
-        document.querySelectorAll('#selector-vista-evaluacion .tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
-
-        const layout = document.getElementById('asistente-layout');
-        layout.classList.remove('vista-ambos', 'vista-chat', 'vista-formulario');
-        layout.classList.add(`vista-${btn.dataset.vista}`);
+        if (btn) seleccionarVista(btn.dataset.vista);
     });
+
+    // ?vista=chat llega desde el acceso directo flotante de las demás páginas.
+    const vistaInicial = new URLSearchParams(window.location.search).get('vista');
+    if (VISTAS_EVALUACION.includes(vistaInicial)) {
+        seleccionarVista(vistaInicial);
+        if (vistaInicial === 'chat') {
+            document.getElementById('asistente-chat-container-input')?.focus();
+        }
+    }
 }
 
 /* ---------------- Enlace entre el formulario y el borrador compartido ------------------- */
@@ -171,7 +184,7 @@ function crearFilaProducto(index) {
             ${entry.sin_coincidencia ? `<div class="hint" style="color:var(--warning);margin-top:0.25rem;">El asistente detectó "${escapeHtml(entry.nombre_detectado)}" — selecciona el producto correcto del catálogo</div>` : ''}
         </td>
         <td><input type="number" min="1" name="cantidad" required value="${entry.cantidad || 1}"></td>
-        <td><input type="text" name="especificaciones" placeholder="Opcional" value="${escapeHtml(entry.especificaciones || '')}"></td>
+        <td><input type="text" name="especificaciones" maxlength="500" placeholder="Opcional" value="${escapeHtml(entry.especificaciones || '')}"></td>
         <td><button type="button" class="remove-line-btn" aria-label="Quitar producto de la lista">${icon('close', { size: 14 })}</button></td>
     `;
 

@@ -8,6 +8,11 @@
    después, dentro del propio panel.
    ============================================================ */
 
+// Deben ser ≤ que los topes del backend (app/schemas/asistente.py): el chat
+// solo reenvía los últimos mensajes y cada mensaje tiene longitud máxima.
+const ASISTENTE_MAX_MENSAJES_ENVIADOS = 20;
+const ASISTENTE_MAX_CARACTERES_MENSAJE = 2000;
+
 function esEntornoDesarrollo() {
     return (typeof isLocalHost !== 'undefined' && isLocalHost) || window.location.search.includes('debug=1');
 }
@@ -32,6 +37,7 @@ function initAsistente({
     let modeloLLM = null;
     let errorConexion = null;
     let ultimoDebug = null; // { payload, respuesta } del último turno — solo para el panel de desarrollo
+    let reenfocarTrasEnvio = false;
 
     function textoBienvenida() {
         if (modo === 'explicacion' && !evaluacionId) {
@@ -90,6 +96,7 @@ function initAsistente({
     function render() {
         const textareaPrevio = document.getElementById(`${contenedorId}-input`);
         const borradorTexto = textareaPrevio ? textareaPrevio.value : '';
+        const teniaFoco = Boolean(textareaPrevio) && document.activeElement === textareaPrevio;
         const inputDeshabilitado = enviando || (modo === 'explicacion' && !evaluacionId);
 
         contenedor.innerHTML = `
@@ -111,6 +118,7 @@ function initAsistente({
                 </div>
                 <form class="chat-entrada" id="${contenedorId}-form">
                     <textarea id="${contenedorId}-input" rows="2" placeholder="Escribe tu mensaje…" aria-label="Mensaje para el asistente"
+                        maxlength="${ASISTENTE_MAX_CARACTERES_MENSAJE}"
                         ${inputDeshabilitado ? 'disabled' : ''}>${escapeHtml(borradorTexto)}</textarea>
                     <button type="submit" class="btn btn-primary btn-sm" ${inputDeshabilitado ? 'disabled' : ''}>Enviar</button>
                 </form>
@@ -141,6 +149,11 @@ function initAsistente({
                 form.requestSubmit();
             }
         });
+        if ((teniaFoco || reenfocarTrasEnvio) && !textarea.disabled) {
+            reenfocarTrasEnvio = false;
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
     }
 
     async function consultarEstado() {
@@ -163,7 +176,10 @@ function initAsistente({
         render();
 
         const payload = {
-            mensajes: mensajes.filter((m) => !m.esError).map((m) => ({ rol: m.rol, contenido: m.contenido })),
+            mensajes: mensajes
+                .filter((m) => !m.esError)
+                .slice(-ASISTENTE_MAX_MENSAJES_ENVIADOS)
+                .map((m) => ({ rol: m.rol, contenido: m.contenido })),
             borrador: modo === 'borrador' ? obtenerBorrador() : { productos: [] },
         };
         if (modo === 'explicacion' && evaluacionId) {
@@ -181,9 +197,10 @@ function initAsistente({
                 aplicarBorrador(data.borrador, data.campos_actualizados, data.listo_para_confirmar);
             }
         } catch (err) {
-            mensajes.push({ rol: 'asistente', contenido: `No se pudo contactar al asistente: ${err.message}`, esError: true });
+            mensajes.push({ rol: 'asistente', contenido: err.message, esError: true });
         } finally {
             enviando = false;
+            reenfocarTrasEnvio = true;
             render();
         }
     }

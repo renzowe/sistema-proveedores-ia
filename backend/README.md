@@ -47,9 +47,9 @@ real (no un stub): lo único que falta para activarla es una
   depende de un servicio externo.
 - `app/ai/prompts/*.txt`: plantillas con el rol, la información disponible
   y las restricciones de cada agente (financiero, calidad, logístico,
-  riesgo, decisor, asistente), usadas por `EvaluacionService.generar_explicacion_ia()`
-  y por `AsistenteService` para producir texto en lenguaje natural a partir
-  de datos ya calculados.
+  riesgo, decisor, asistente). `AsistenteService` usa `asistente.txt` (armar
+  borrador) y `decisor.txt` (explicar resultados); el resto documenta el rol
+  de cada agente del motor determinístico.
 
 Estas dos capacidades (interpretar solicitudes y explicar resultados) viven
 dentro del **asistente conversacional** de la pestaña Evaluaciones — no
@@ -73,8 +73,8 @@ cubre dos modos, distinguidos por si el payload trae `evaluacion_id`:
   pasando siempre por `EvaluacionService.crear()` + `ejecutar_evaluacion()`
   cuando el usuario confirma desde el formulario.
 - **Con `evaluacion_id`**: el chat explica los resultados YA calculados y
-  persistidos de esa evaluación (reutiliza `EvaluacionService.obtener_resultados()`
-  y el mismo bloque de "datos reales" que usa `generar_explicacion_ia()`).
+  persistidos de esa evaluación (reutiliza `EvaluacionService.obtener_resultados()`,
+  recortado por `_datos_reales_para_explicacion()` a solo ranking y puntajes).
   Si la evaluación no fue procesada, responde pidiendo procesarla — nunca
   inventa un resultado.
 
@@ -96,6 +96,16 @@ primero una llamada real a Claude (multi-turno, vía `LLMRequest.historial`/
 `system` en `app/ai/llm_client.py`) y solo cae al modo demostración si esa
 llamada falla o no está disponible.
 
+**Protección del endpoint** (es público y, con API Key, cada mensaje cuesta):
+- Límite de uso en memoria (`app/utils/limite_uso.py`): como máximo
+  `ASISTENTE_LIMITE_POR_IP` mensajes por IP cada `ASISTENTE_VENTANA_SEGUNDOS`,
+  y `ASISTENTE_LIMITE_DIARIO` mensajes por día sumando todos los clientes.
+  Al superarlo responde `429`. El contador se reinicia al reiniciar el backend
+  y no se comparte entre instancias (suficiente para una sola instancia).
+- Tamaño acotado (`app/schemas/asistente.py`): mensajes de hasta 2000
+  caracteres y como máximo 30 mensajes por petición (`422` si se supera). El
+  chat solo reenvía los últimos 20.
+
 ### Variables de entorno relevantes
 
 ```text
@@ -103,7 +113,16 @@ LLM_ENABLED=false       # false = modo determinístico puro (por defecto)
 ANTHROPIC_API_KEY=      # se deja vacía; nunca se sube al repositorio
 CLAUDE_MODEL=claude-haiku-4-5-20251001
 CLAUDE_MAX_TOKENS=1024
+
+CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500   # en producción: URL pública del frontend
+ASISTENTE_LIMITE_POR_IP=20
+ASISTENTE_VENTANA_SEGUNDOS=600
+ASISTENTE_LIMITE_DIARIO=200
 ```
+
+`CORS_ORIGINS` define qué dominios pueden llamar a la API desde el navegador.
+Si en producción no incluye la URL del frontend, el navegador bloqueará las
+peticiones y la interfaz mostrará "Backend no disponible".
 
 Con `LLM_ENABLED=false` (o sin `ANTHROPIC_API_KEY`), el backend inicia y
 funciona con normalidad: el motor determinístico (F7) y los agentes

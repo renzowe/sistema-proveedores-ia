@@ -30,6 +30,11 @@ from app.ai.llm_client import LLMClient, LLMRequest, LLMUnavailableError
 from app.ai.parser_solicitud import interpretar_solicitud
 from app.models.producto import Producto
 from app.schemas.asistente import (
+    MAX_CARACTERES_DESCRIPCION,
+    MAX_CARACTERES_ESPECIFICACIONES,
+    MAX_CARACTERES_NOMBRE_PRODUCTO,
+    MAX_CARACTERES_TITULO,
+    MAX_PRODUCTOS_BORRADOR,
     AsistenteMensajeIn,
     AsistenteMensajeOut,
     BorradorEvaluacion,
@@ -62,6 +67,20 @@ def _extraer_json(texto_respuesta: str) -> dict:
     return json.loads(limpio)
 
 
+def _texto_recortado(valor: Any, maximo: int) -> Optional[str]:
+    if valor is None:
+        return None
+    texto = str(valor).strip()
+    return texto[:maximo] or None
+
+
+def _entero_o_none(valor: Any) -> Optional[int]:
+    try:
+        return int(valor)
+    except (TypeError, ValueError):
+        return None
+
+
 class AsistenteService:
     @staticmethod
     def estado() -> Dict[str, Any]:
@@ -79,6 +98,12 @@ class AsistenteService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="La conversación debe incluir al menos un mensaje."
+            )
+
+        if payload.mensajes[-1].rol != "usuario":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El último mensaje de la conversación debe ser del usuario."
             )
 
         ultimo_mensaje = payload.mensajes[-1].contenido.strip()
@@ -155,10 +180,10 @@ class AsistenteService:
             "dato fuera de este bloque):\n"
             f"{json.dumps(datos_reales, ensure_ascii=False, indent=2)}"
         )
-        historial = AsistenteService._construir_historial_anthropic(payload.mensajes[:-1])
+        historial, mensaje_actual = AsistenteService._preparar_turno(payload.mensajes)
         try:
             respuesta = llm_client.generate(LLMRequest(
-                prompt=payload.mensajes[-1].contenido,
+                prompt=mensaje_actual,
                 system=prompt_sistema,
                 historial=historial,
                 contexto=datos_reales,
@@ -214,17 +239,25 @@ class AsistenteService:
 
         respuesta_texto, borrador_bruto, campos_actualizados = resultado
 
+        # El borrador puede venir del LLM: se valida y recorta campo a campo
+        # para que una respuesta mal formada nunca produzca un error 500.
+        productos_brutos = borrador_bruto.get("productos")
+        if not isinstance(productos_brutos, list):
+            productos_brutos = []
+
         catalogo = db.query(Producto).filter(Producto.estado == "Activo").all()
         productos_resueltos: List[ProductoBorrador] = []
-        for p in borrador_bruto.get("productos", []) or []:
-            nombre = str(p.get("nombre_detectado", "")).strip()
+        for p in productos_brutos[:MAX_PRODUCTOS_BORRADOR]:
+            if not isinstance(p, dict):
+                continue
+            nombre = _texto_recortado(p.get("nombre_detectado"), MAX_CARACTERES_NOMBRE_PRODUCTO)
             if not nombre:
                 continue
             coincidencia = _buscar_producto_similar(nombre, catalogo)
             productos_resueltos.append(ProductoBorrador(
                 nombre_detectado=nombre,
-                cantidad=max(int(p.get("cantidad") or 1), 1),
-                especificaciones=p.get("especificaciones") or None,
+                cantidad=max(_entero_o_none(p.get("cantidad")) or 1, 1),
+                especificaciones=_texto_recortado(p.get("especificaciones"), MAX_CARACTERES_ESPECIFICACIONES),
                 producto_id=coincidencia.id if coincidencia else None,
                 producto_nombre_catalogo=coincidencia.nombre if coincidencia else None,
                 sin_coincidencia=coincidencia is None,
@@ -234,10 +267,11 @@ class AsistenteService:
         if prioridad not in {"precio", "calidad", "logistica", "balanceado"}:
             prioridad = "balanceado"
 
+        plazo = _entero_o_none(borrador_bruto.get("entrega_maxima_dias"))
         borrador_final = BorradorEvaluacion(
-            titulo=borrador_bruto.get("titulo") or None,
-            descripcion_necesidad=borrador_bruto.get("descripcion_necesidad") or None,
-            entrega_maxima_dias=borrador_bruto.get("entrega_maxima_dias") or None,
+            titulo=_texto_recortado(borrador_bruto.get("titulo"), MAX_CARACTERES_TITULO),
+            descripcion_necesidad=_texto_recortado(borrador_bruto.get("descripcion_necesidad"), MAX_CARACTERES_DESCRIPCION),
+            entrega_maxima_dias=plazo if plazo and plazo > 0 else None,
             prioridad=prioridad,
             productos=productos_resueltos,
         )
@@ -258,17 +292,37 @@ class AsistenteService:
         )
 
     @staticmethod
-    def _construir_historial_anthropic(mensajes: List[MensajeChatIn]) -> List[Dict[str, str]]:
-        return [{"role": _MAPA_ROLES_ANTHROPIC[m.rol], "content": m.contenido} for m in mensajes]
+    def _preparar_turno(mensajes: List[MensajeChatIn]) -> Tuple[List[Dict[str, str]], str]:
+        """
+        Devuelve (historial, mensaje_actual) en el formato de la API de Anthropic.
+
+        La API exige que la conversación empiece con un mensaje del usuario y
+        que los roles se alternen. El frontend solo reenvía los últimos
+        mensajes (el recorte puede empezar por una respuesta del asistente) y
+        un turno fallido deja dos mensajes de usuario seguidos, así que se
+        descartan las respuestas iniciales y se unen los mensajes consecutivos
+        del mismo rol. `procesar_mensaje` ya garantiza que el último es del usuario.
+        """
+        turnos: List[Dict[str, str]] = []
+        for m in mensajes:
+            rol = _MAPA_ROLES_ANTHROPIC[m.rol]
+            if not turnos and rol == "assistant":
+                continue
+            if turnos and turnos[-1]["role"] == rol:
+                turnos[-1]["content"] += f"\n\n{m.contenido}"
+            else:
+                turnos.append({"role": rol, "content": m.contenido})
+        actual = turnos.pop()
+        return turnos, actual["content"]
 
     @staticmethod
     def _turno_real(llm_client: LLMClient, payload: AsistenteMensajeIn) -> Optional[Tuple[str, Dict[str, Any], List[str]]]:
         prompt_sistema = _PROMPT_ASISTENTE_PATH.read_text(encoding="utf-8")
-        historial = AsistenteService._construir_historial_anthropic(payload.mensajes[:-1])
+        historial, mensaje_actual = AsistenteService._preparar_turno(payload.mensajes)
         borrador_actual_json = json.dumps(payload.borrador.model_dump(), ensure_ascii=False)
         prompt_usuario = (
             f"Borrador actual antes de este turno:\n{borrador_actual_json}\n\n"
-            f"Mensaje del usuario:\n{payload.mensajes[-1].contenido}"
+            f"Mensaje del usuario:\n{mensaje_actual}"
         )
 
         try:

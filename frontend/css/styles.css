@@ -1165,9 +1165,10 @@ table.data-table tbody tr:hover {
     to { opacity: 1; transform: translateX(0); }
 }
 
-/* ============================== AI widget (chat) ============================== */
+/* ============================== Acceso directo al asistente ============================== */
 
 .chat-fab {
+    text-decoration: none;
     position: fixed;
     bottom: 1.5rem;
     right: 1.5rem;
@@ -1190,78 +1191,9 @@ table.data-table tbody tr:hover {
     filter: brightness(1.08);
 }
 
-.chat-panel {
-    position: fixed;
-    bottom: 5.5rem;
-    right: 1.5rem;
-    width: 320px;
-    max-width: calc(100vw - 2rem);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    z-index: 401;
-    overflow: hidden;
-    display: none;
-    flex-direction: column;
-}
-
-.chat-panel.open {
-    display: flex;
-}
-
-.chat-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.85rem 1rem;
-    background: var(--ai-soft);
-    border-bottom: 1px solid var(--ai-border);
-}
-
-.chat-panel-header-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.86rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.chat-panel-header-title .icon {
-    color: var(--ai-accent);
-}
-
-.chat-panel-body {
-    padding: 1.1rem 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 0.5rem;
-    color: var(--text-secondary);
-}
-
-.chat-panel-body .icon-tile {
-    width: 34px;
-    height: 34px;
-}
-
-.chat-panel-footer {
-    padding: 0.8rem 1rem;
-    border-top: 1px solid var(--border);
-}
-
-.chat-panel-footer input {
-    width: 100%;
-    background: var(--surface-alt);
-    border: 1px solid var(--border);
-    color: var(--text-tertiary);
-    border-radius: var(--radius-sm);
-    padding: 0.5rem 0.65rem;
-    font-size: 0.82rem;
-    cursor: not-allowed;
-    font-family: inherit;
+.chat-fab:focus-visible {
+    outline: 2px solid var(--ai-accent);
+    outline-offset: 3px;
 }
 
 /* ============================== Utility ============================== */

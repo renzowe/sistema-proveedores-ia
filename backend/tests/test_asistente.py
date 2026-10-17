@@ -13,15 +13,27 @@ aparte, gateado por `LLM_REALMENTE_DISPONIBLE` (se salta sin credenciales).
 import pytest
 from fastapi.testclient import TestClient
 
-from app.ai.llm_client import LLMClient
+from app.ai.llm_client import LLMClient, LLMResponse
 from app.config import settings
 from app.main import app
+from app.routers.evaluaciones import limitador_asistente
+from app.schemas.asistente import MensajeChatIn
+from app.services.asistente_service import AsistenteService
 
 client = TestClient(app)
 
 LLM_REALMENTE_DISPONIBLE = LLMClient().esta_disponible()
 
 ENDPOINT = "/api/v1/evaluaciones/asistente/mensaje"
+
+
+@pytest.fixture(autouse=True)
+def limitador_limpio():
+    # El limitador guarda estado en memoria del proceso: se limpia entre
+    # pruebas para que unas no consuman el cupo de otras.
+    limitador_asistente.reiniciar()
+    yield
+    limitador_asistente.reiniciar()
 
 
 def _mensaje(texto, borrador=None, evaluacion_id=None):
@@ -206,6 +218,111 @@ def test_asistente_explica_evaluacion_procesada_usando_datos_reales():
         client.delete(f"/api/v1/proveedor-productos/{rel_id}")
         client.delete(f"/api/v1/productos/{prod_id}")
         client.delete(f"/api/v1/proveedores/{prov_id}")
+
+
+# --- Protección del endpoint público (límites de uso y de tamaño) -----------
+
+def test_asistente_limita_mensajes_por_ip(monkeypatch):
+    monkeypatch.setattr(settings, "ASISTENTE_LIMITE_POR_IP", 2)
+    assert client.post(ENDPOINT, json=_mensaje("Hola")).status_code == 200
+    assert client.post(ENDPOINT, json=_mensaje("Hola")).status_code == 200
+
+    response = client.post(ENDPOINT, json=_mensaje("Hola"))
+    assert response.status_code == 429
+    assert int(response.headers["Retry-After"]) > 0
+
+    # Otro cliente (otra IP detrás del proxy) no se ve afectado.
+    otro = client.post(ENDPOINT, json=_mensaje("Hola"), headers={"X-Forwarded-For": "203.0.113.7"})
+    assert otro.status_code == 200
+
+
+def test_asistente_ip_falsificada_en_x_forwarded_for_no_evade_el_limite(monkeypatch):
+    monkeypatch.setattr(settings, "ASISTENTE_LIMITE_POR_IP", 1)
+    proxy = {"X-Forwarded-For": "1.1.1.1, 198.51.100.20"}
+    assert client.post(ENDPOINT, json=_mensaje("Hola"), headers=proxy).status_code == 200
+    # Cambiar la primera IP (la que controla el cliente) no abre un cupo nuevo.
+    falsificada = {"X-Forwarded-For": "9.9.9.9, 198.51.100.20"}
+    assert client.post(ENDPOINT, json=_mensaje("Hola"), headers=falsificada).status_code == 429
+
+
+def test_asistente_respeta_el_limite_diario_global(monkeypatch):
+    monkeypatch.setattr(settings, "ASISTENTE_LIMITE_DIARIO", 2)
+    for ip in ("203.0.113.1", "203.0.113.2"):
+        assert client.post(ENDPOINT, json=_mensaje("Hola"), headers={"X-Forwarded-For": ip}).status_code == 200
+    response = client.post(ENDPOINT, json=_mensaje("Hola"), headers={"X-Forwarded-For": "203.0.113.3"})
+    assert response.status_code == 429
+    assert "diario" in response.json()["detail"]
+
+
+def test_asistente_rechaza_mensaje_demasiado_largo():
+    response = client.post(ENDPOINT, json=_mensaje("a" * 2001))
+    assert response.status_code == 422
+
+
+def test_asistente_rechaza_conversacion_demasiado_larga():
+    mensajes = [{"rol": "usuario", "contenido": "hola"}] * 31
+    response = client.post(ENDPOINT, json={"mensajes": mensajes})
+    assert response.status_code == 422
+
+
+def test_asistente_exige_que_el_ultimo_mensaje_sea_del_usuario():
+    response = client.post(ENDPOINT, json={"mensajes": [
+        {"rol": "usuario", "contenido": "hola"},
+        {"rol": "asistente", "contenido": "¿En qué te ayudo?"},
+    ]})
+    assert response.status_code == 400
+
+
+def test_preparar_turno_normaliza_el_historial_para_la_api_de_anthropic():
+    mensajes = [
+        MensajeChatIn(rol="asistente", contenido="respuesta huérfana tras recortar"),
+        MensajeChatIn(rol="usuario", contenido="Necesito laptops"),
+        MensajeChatIn(rol="asistente", contenido="¿Cuántas?"),
+        MensajeChatIn(rol="usuario", contenido="10"),
+        MensajeChatIn(rol="usuario", contenido="para la sede norte"),
+    ]
+    historial, actual = AsistenteService._preparar_turno(mensajes)
+    assert historial == [
+        {"role": "user", "content": "Necesito laptops"},
+        {"role": "assistant", "content": "¿Cuántas?"},
+    ]
+    assert actual == "10\n\npara la sede norte"
+
+
+def test_asistente_tolera_una_respuesta_mal_formada_del_llm(monkeypatch):
+    # Simula el modo real sin credenciales ni llamadas externas.
+    respuesta_llm = (
+        '{"respuesta_usuario": "Anotado.", "borrador": {'
+        '"titulo": "' + "T" * 400 + '", "entrega_maxima_dias": "pronto", '
+        '"prioridad": "urgentísima", '
+        '"productos": ["texto suelto", {"nombre_detectado": "laptops", "cantidad": "diez"}]}, '
+        '"listo_para_confirmar": true}'
+    )
+    monkeypatch.setattr(LLMClient, "esta_disponible", lambda self: True)
+    monkeypatch.setattr(
+        LLMClient, "generate",
+        lambda self, request: LLMResponse(contenido=respuesta_llm, modelo="simulado", exitoso=True),
+    )
+
+    response = client.post(ENDPOINT, json=_mensaje("Necesito laptops"))
+    assert response.status_code == 200
+    data = response.json()
+    assert data["modo"] == "real"
+    assert len(data["borrador"]["titulo"]) == 255
+    assert data["borrador"]["entrega_maxima_dias"] is None
+    assert data["borrador"]["prioridad"] == "balanceado"
+    assert [(p["nombre_detectado"], p["cantidad"]) for p in data["borrador"]["productos"]] == [("laptops", 1)]
+
+
+def test_cors_solo_autoriza_los_origenes_configurados():
+    preflight = {"Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type"}
+
+    permitido = client.options(ENDPOINT, headers={"Origin": settings.CORS_ORIGINS[0], **preflight})
+    assert permitido.headers.get("access-control-allow-origin") == settings.CORS_ORIGINS[0]
+    assert "access-control-allow-credentials" not in permitido.headers
+
+    ajeno = client.options(ENDPOINT, headers={"Origin": "https://sitio-ajeno.example", **preflight})
+    assert "access-control-allow-origin" not in ajeno.headers
 
 
 # --- Modo real (gateado; se salta sin ANTHROPIC_API_KEY configurada) --------

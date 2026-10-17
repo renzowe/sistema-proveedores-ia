@@ -341,7 +341,7 @@ function renderDictamenesAgentes() {
                 type: 'ai',
                 iconName: 'sparkles',
                 title: 'Motor de agentes especializados (reglas determinísticas)',
-                body: 'Cada dictamen es generado por un agente de dominio (Financiero, Calidad, Logístico, Riesgo, Decisor) usando fórmulas y umbrales fijos sobre datos reales del sistema. No es texto generado por un modelo de lenguaje — esa capacidad está prevista para una fase posterior.',
+                body: 'Cada dictamen es generado por un agente de dominio (Financiero, Calidad, Logístico, Riesgo, Decisor) usando fórmulas y umbrales fijos sobre datos reales del sistema. No es texto generado por un modelo de lenguaje: para preguntar en lenguaje natural sobre este resultado, usa el asistente conversacional de arriba.',
             })}
         </div>
         <div class="agent-dictamen mb-1">

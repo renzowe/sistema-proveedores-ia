@@ -46,6 +46,8 @@ def test_backend_inicia_correctamente():
     body = response.json()
     assert body["status"] == "healthy"
     assert "llm_enabled" in body
+    # /health es público: no debe exponer datos de la infraestructura.
+    assert "database_url" not in body
 
 
 def test_endpoints_existentes_siguen_funcionando_sin_depender_del_llm():
@@ -252,25 +254,6 @@ def test_regresion_flujo_principal_no_se_ve_afectado_por_la_capa_ai():
     assert isinstance(evaluaciones_antes, list)
 
 
-def test_explicacion_ia_responde_503_controlado_si_llm_desactivado(monkeypatch):
-    """
-    Con el LLM desactivado, el endpoint de explicación por IA debe fallar de
-    forma controlada (503) y nunca con un error 500 sin manejar.
-    """
-    monkeypatch.setattr(settings, "LLM_ENABLED", False)
-
-    # Usa la evaluación procesada más reciente si existe; si no hay ninguna,
-    # la prueba no aplica (se salta sin marcar fallo).
-    evaluaciones = client.get("/api/v1/evaluaciones/").json()
-    procesadas = [e for e in evaluaciones if e.get("detalles_resultado")]
-    if not procesadas:
-        pytest.skip("No hay evaluaciones procesadas en la base para probar este endpoint.")
-
-    eval_id = procesadas[0]["id"]
-    response = client.post(f"/api/v1/evaluaciones/{eval_id}/explicacion-ia")
-    assert response.status_code == 503
-
-
 # --- Interpretación de lenguaje natural: emparejamiento contra el catálogo -
 
 def test_buscar_producto_similar_tolera_plurales_regulares():
@@ -285,29 +268,7 @@ def test_buscar_producto_similar_tolera_plurales_regulares():
     assert _buscar_producto_similar("impresoras", catalogo) is None
 
 
-def test_endpoint_interpretar_solicitud_rechaza_texto_vacio():
-    response = client.post("/api/v1/evaluaciones/interpretar-solicitud", json={"texto": "   "})
-    assert response.status_code == 400
-
-
-def test_endpoint_interpretar_solicitud_resuelve_productos_del_catalogo_real():
-    productos_catalogo = client.get("/api/v1/productos/").json()
-    if not productos_catalogo:
-        pytest.skip("No hay productos sembrados en la base para probar el emparejamiento.")
-
-    nombre_real = productos_catalogo[0]["nombre"]
-    primera_palabra = nombre_real.split()[0]
-
-    response = client.post(
-        "/api/v1/evaluaciones/interpretar-solicitud",
-        json={"texto": f"Necesito 5 {primera_palabra.lower()}."},
-    )
-    assert response.status_code == 200
-    data = response.json()
-    assert data["interpretado_por"] in ("anthropic", "heuristica")
-    assert isinstance(data["productos"], list)
-    # No exige que haya coincidencia (depende del catálogo real), pero sí que
-    # la forma de la respuesta sea siempre la esperada.
-    for p in data["productos"]:
-        assert "nombre_detectado" in p
-        assert "producto_id" in p
+def test_endpoints_retirados_ya_no_existen():
+    # Reemplazados por el asistente conversacional (/evaluaciones/asistente/mensaje).
+    assert client.post("/api/v1/evaluaciones/interpretar-solicitud", json={"texto": "x"}).status_code in (404, 405)
+    assert client.post("/api/v1/evaluaciones/1/explicacion-ia").status_code in (404, 405)

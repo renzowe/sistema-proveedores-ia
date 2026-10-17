@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.schemas.asistente import AsistenteMensajeIn, AsistenteMensajeOut
 from app.schemas.evaluacion import (
@@ -12,17 +12,15 @@ from app.schemas.evaluacion import (
 )
 from app.services.asistente_service import AsistenteService
 from app.services.evaluacion_service import EvaluacionService
+from app.utils.limite_uso import LimitadorUso, obtener_ip_cliente
 
 router = APIRouter(prefix="/evaluaciones", tags=["Evaluaciones"])
 
-
-class InterpretarSolicitudIn(BaseModel):
-    texto: str
-
-
-@router.post("/interpretar-solicitud")
-def interpretar_solicitud_nl(payload: InterpretarSolicitudIn, db: Session = Depends(get_db)) -> Dict[str, Any]:
-    return EvaluacionService.interpretar_solicitud_nl(db=db, texto=payload.texto)
+limitador_asistente = LimitadorUso(
+    limite_por_cliente=lambda: settings.ASISTENTE_LIMITE_POR_IP,
+    ventana_segundos=lambda: settings.ASISTENTE_VENTANA_SEGUNDOS,
+    limite_diario=lambda: settings.ASISTENTE_LIMITE_DIARIO,
+)
 
 
 @router.get("/asistente/estado")
@@ -31,7 +29,8 @@ def obtener_estado_asistente() -> Dict[str, Any]:
 
 
 @router.post("/asistente/mensaje", response_model=AsistenteMensajeOut)
-def enviar_mensaje_asistente(payload: AsistenteMensajeIn, db: Session = Depends(get_db)):
+def enviar_mensaje_asistente(payload: AsistenteMensajeIn, request: Request, db: Session = Depends(get_db)):
+    limitador_asistente.registrar(obtener_ip_cliente(request))
     return AsistenteService.procesar_mensaje(db=db, payload=payload)
 
 
@@ -63,10 +62,6 @@ def obtener_resultados_evaluacion(evaluacion_id: int, db: Session = Depends(get_
 @router.get("/{evaluacion_id}/informe-agentes")
 def obtener_informe_agentes(evaluacion_id: int, db: Session = Depends(get_db)) -> Dict[str, Any]:
     return EvaluacionService.obtener_informe_agentes(db=db, evaluacion_id=evaluacion_id)
-
-@router.post("/{evaluacion_id}/explicacion-ia")
-def generar_explicacion_ia(evaluacion_id: int, db: Session = Depends(get_db)) -> Dict[str, Any]:
-    return EvaluacionService.generar_explicacion_ia(db=db, evaluacion_id=evaluacion_id)
 
 @router.post("/", response_model=EvaluacionResponse, status_code=status.HTTP_201_CREATED)
 def crear_evaluacion(evaluacion_in: EvaluacionCreate, db: Session = Depends(get_db)):

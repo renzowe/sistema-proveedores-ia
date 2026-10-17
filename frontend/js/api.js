@@ -91,14 +91,12 @@ const api = {
     },
 
     evaluaciones: {
-        interpretarNL: (texto) => apiFetch('/evaluaciones/interpretar-solicitud', { method: 'POST', body: JSON.stringify({ texto }) }),
         list: (params) => apiFetch(`/evaluaciones/${buildQuery(params)}`),
         get: (id) => apiFetch(`/evaluaciones/${id}`),
         compatibles: (id) => apiFetch(`/evaluaciones/${id}/proveedores-compatibles`),
         procesar: (id) => apiFetch(`/evaluaciones/${id}/procesar`, { method: 'POST' }),
         resultados: (id) => apiFetch(`/evaluaciones/${id}/resultados`),
         informeAgentes: (id) => apiFetch(`/evaluaciones/${id}/informe-agentes`),
-        explicacionIA: (id) => apiFetch(`/evaluaciones/${id}/explicacion-ia`, { method: 'POST' }),
         asistenteEstado: () => apiFetch('/evaluaciones/asistente/estado'),
         asistenteMensaje: (payload) => apiFetch('/evaluaciones/asistente/mensaje', { method: 'POST', body: JSON.stringify(payload) }),
         create: (data) => apiFetch('/evaluaciones/', { method: 'POST', body: JSON.stringify(data) }),

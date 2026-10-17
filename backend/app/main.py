@@ -22,13 +22,14 @@ app = FastAPI(
 def on_startup():
     init_db()
 
-# Configuración de CORS para permitir peticiones desde el frontend
+# Solo los orígenes de CORS_ORIGINS pueden llamar a la API desde un navegador.
+# La aplicación no usa cookies ni sesiones, así que no se permiten credenciales.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type"],
 )
 
 # Incluir routers bajo /api/v1 como prefijo oficial
@@ -51,6 +52,5 @@ def read_root():
 def health_check():
     return {
         "status": "healthy",
-        "database_url": settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else "configured",
         "llm_enabled": settings.LLM_ENABLED
     }
