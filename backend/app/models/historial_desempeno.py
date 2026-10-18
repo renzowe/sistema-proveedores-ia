@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, Numeric, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
+from app.utils.fechas import ahora_utc
 
 class HistorialDesempeno(Base):
     __tablename__ = "historial_desempeno"
@@ -14,7 +13,7 @@ class HistorialDesempeno(Base):
     tiempo_entrega_promedio_dias = Column(Integer, nullable=True)
     cumplimiento_porcentaje = Column(Numeric(5, 2), nullable=True)
     observaciones = Column(Text, nullable=True)
-    fecha_registro = Column(DateTime, default=datetime.utcnow)
+    fecha_registro = Column(DateTime, default=ahora_utc)
 
     # Relaciones
     proveedor = relationship("Proveedor", back_populates="historiales")

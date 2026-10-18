@@ -2,11 +2,15 @@
    Cliente API — capa de acceso al backend FastAPI
    ============================================================ */
 
-// En local (localhost/127.0.0.1) apunta al backend local; en producción usa
-// la URL pública del backend desplegado en Render.
+// js/config.js puede fijar window.APP_CONFIG.apiRootUrl (en Docker vale '':
+// mismo origen, nginx reenvía /api al backend). Si no lo fija, en local
+// (localhost/127.0.0.1) se usa el backend local y en producción el de Render.
 const PRODUCTION_API_URL = 'https://sistema-proveedores-ia.onrender.com';
 const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-const API_ROOT_URL = isLocalHost ? 'http://localhost:8000' : PRODUCTION_API_URL;
+const APP_CONFIG = window.APP_CONFIG || {};
+const API_ROOT_URL = typeof APP_CONFIG.apiRootUrl === 'string'
+    ? APP_CONFIG.apiRootUrl.replace(/\/$/, '')
+    : (isLocalHost ? 'http://localhost:8000' : PRODUCTION_API_URL);
 const API_BASE_URL = `${API_ROOT_URL}/api/v1`;
 
 async function apiFetch(endpoint, options = {}) {

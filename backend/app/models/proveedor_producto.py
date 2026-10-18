@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
+from app.utils.fechas import ahora_utc
 
 class ProveedorProducto(Base):
     __tablename__ = "proveedor_productos"
@@ -15,7 +14,7 @@ class ProveedorProducto(Base):
     tiempo_entrega_dias = Column(Integer, nullable=False, default=1)
     condiciones = Column(Text, nullable=True)
     disponible = Column(Boolean, default=True)
-    fecha_actualizacion = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    fecha_actualizacion = Column(DateTime, default=ahora_utc, onupdate=ahora_utc)
 
     # Relaciones
     proveedor = relationship("Proveedor", back_populates="productos_ofrecidos")

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 class ProveedorBase(BaseModel):
     razon_social: str
@@ -34,5 +34,4 @@ class ProveedorResponse(ProveedorBase):
     id: int
     fecha_creacion: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

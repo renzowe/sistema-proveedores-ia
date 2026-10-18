@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Column, DateTime, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
+from app.utils.fechas import ahora_utc
 
 class Proveedor(Base):
     __tablename__ = "proveedores"
@@ -19,7 +18,7 @@ class Proveedor(Base):
     correo = Column(String(255), nullable=True)
     direccion = Column(Text, nullable=True)
     estado = Column(String(20), default="Activo")
-    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+    fecha_creacion = Column(DateTime, default=ahora_utc)
 
     # Relaciones
     productos_ofrecidos = relationship("ProveedorProducto", back_populates="proveedor", cascade="all, delete-orphan")

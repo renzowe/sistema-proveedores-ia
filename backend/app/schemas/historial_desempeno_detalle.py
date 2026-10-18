@@ -1,7 +1,7 @@
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.schemas.producto import ProductoResponse
 
@@ -20,5 +20,4 @@ class HistorialDesempenoDetalleResponse(HistorialDesempenoDetalleBase):
     historial_id: int
     producto: Optional[ProductoResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

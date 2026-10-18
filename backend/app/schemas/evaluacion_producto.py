@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.schemas.producto import ProductoResponse
 
@@ -17,5 +17,4 @@ class EvaluacionProductoResponse(EvaluacionProductoBase):
     evaluacion_id: int
     producto: Optional[ProductoResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,0 +1,12 @@
+# Nunca copiar credenciales dentro de la imagen: la configuración llega por
+# variables de entorno (docker-compose.yml o el panel de la plataforma).
+.env
+*.env
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+venv/
+.venv/

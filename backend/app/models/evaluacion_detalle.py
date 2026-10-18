@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, Text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
+from app.utils.fechas import ahora_utc
 
 class EvaluacionDetalle(Base):
     __tablename__ = "evaluacion_detalle"
@@ -19,7 +18,7 @@ class EvaluacionDetalle(Base):
     puntaje_final = Column(Numeric(5, 2), nullable=True)
     recomendado = Column(Boolean, default=False)
     explicacion = Column(Text, nullable=True)
-    fecha_calculo = Column(DateTime, default=datetime.utcnow)
+    fecha_calculo = Column(DateTime, default=ahora_utc)
 
     # Relaciones
     evaluacion = relationship("Evaluacion", back_populates="detalles_resultado")

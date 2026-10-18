@@ -2,7 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.schemas.producto import ProductoResponse
 from app.schemas.proveedor import ProveedorResponse
@@ -30,5 +30,4 @@ class ProveedorProductoResponse(ProveedorProductoBase):
     proveedor: Optional[ProveedorResponse] = None
     producto: Optional[ProductoResponse] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

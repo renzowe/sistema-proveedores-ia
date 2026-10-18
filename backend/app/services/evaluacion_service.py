@@ -1,4 +1,3 @@
-from datetime import datetime
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
@@ -14,6 +13,7 @@ from app.models.proveedor import Proveedor
 from app.models.proveedor_producto import ProveedorProducto
 from app.schemas.evaluacion import EvaluacionCreate
 from app.services.historial_service import HistorialService
+from app.utils.fechas import ahora_utc
 
 
 def _singularizar(palabra: str) -> str:
@@ -304,7 +304,7 @@ class EvaluacionService:
                 puntaje_final=Decimal(str(r["puntajes"]["final"])),
                 recomendado=r["recomendado"],
                 explicacion=r["explicacion"],
-                fecha_calculo=datetime.utcnow()
+                fecha_calculo=ahora_utc()
             )
             db.add(detalle_db)
 

@@ -1,0 +1,49 @@
+# Sistema completo en local: base de datos + backend + frontend.
+#
+#   docker compose up --build      -> http://localhost:8080
+#
+# Opcional: copia .env.example a .env (en esta misma carpeta) para activar
+# Claude con una API Key real. Sin ella, el asistente funciona en modo
+# demostración.
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: proveedores
+      POSTGRES_USER: proveedores
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-proveedores_local}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proveedores -d proveedores"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg2://proveedores:${POSTGRES_PASSWORD:-proveedores_local}@db:5432/proveedores
+      SEED_DATA: "true"
+      LLM_ENABLED: ${LLM_ENABLED:-false}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-4-5-20251001}
+      CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8080}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  db_data:

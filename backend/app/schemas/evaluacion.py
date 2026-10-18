@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.schemas.evaluacion_detalle import EvaluacionDetalleResponse
 from app.schemas.evaluacion_producto import EvaluacionProductoCreate, EvaluacionProductoResponse
@@ -22,5 +22,4 @@ class EvaluacionResponse(EvaluacionBase):
     productos_solicitados: List[EvaluacionProductoResponse] = []
     detalles_resultado: List[EvaluacionDetalleResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

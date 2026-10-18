@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,16 +13,19 @@ from app.routers import (
     evaluaciones_router,
 )
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Crea las tablas que falten al arrancar.
+    init_db()
+    yield
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="API REST para el Sistema Inteligente Agéntico de Evaluación y Selección de Proveedores"
+    description="API REST para el Sistema Inteligente Agéntico de Evaluación y Selección de Proveedores",
+    lifespan=lifespan,
 )
-
-# Inicializar tablas en la base de datos al arrancar
-@app.on_event("startup")
-def on_startup():
-    init_db()
 
 # Solo los orígenes de CORS_ORIGINS pueden llamar a la API desde un navegador.
 # La aplicación no usa cookies ni sesiones, así que no se permiten credenciales.
