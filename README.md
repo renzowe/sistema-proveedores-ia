@@ -16,11 +16,19 @@ instalado y abierto.
    git clone <url-del-repositorio>
    cd sistema-proveedores-ia
    ```
-2. Construir y arrancar (la primera vez tarda unos minutos):
+2. Crear el archivo de configuración `.env` a partir del ejemplo:
    ```bash
-   docker compose up --build
+   cp .env.example .env        # Windows (cmd): copy .env.example .env
    ```
-3. Abrir **http://localhost:8080** en el navegador.
+   y en `.env` escribir una contraseña inventada (sin espacios) en
+   `POSTGRES_DOCKER_PASSWORD=`. Es la contraseña de la base de datos que Docker
+   crea en esa computadora; `.env` no se sube al repositorio.
+3. Construir y arrancar (la primera vez tarda unos minutos):
+   ```bash
+   docker compose up -d --build
+   ```
+   Las siguientes veces basta con `docker compose up -d`.
+4. Abrir **http://localhost:8080** en el navegador.
    - Documentación interactiva de la API: http://localhost:8080/docs
 
 Comandos útiles:
@@ -36,10 +44,11 @@ Comandos útiles:
 Las pruebas se ejecutan contra la base de datos del contenedor, nunca contra
 una base de producción.
 
-**Configuración opcional:** copiar `.env.example` a `.env` (en la raíz del
-proyecto) para cambiar el puerto (`FRONTEND_PORT`, si el 8080 está ocupado) o
-para activar el asistente con Claude real (`LLM_ENABLED=true` y
-`ANTHROPIC_API_KEY`). Sin API Key, el asistente funciona en modo demostración.
+**Configuración opcional** (en el mismo `.env`): cambiar el puerto
+(`FRONTEND_PORT`, si el 8080 está ocupado) o activar el asistente con Claude
+real (`LLM_ENABLED=true` y `ANTHROPIC_API_KEY`). Sin API Key, el asistente
+funciona en modo demostración. Tras cambiar `.env`, aplicar con
+`docker compose up -d`.
 
 **Arquitectura de los contenedores:**
 
@@ -63,7 +72,8 @@ una base PostgreSQL.
    cd backend
    pip install -r requirements.txt
    ```
-2. Copiar `backend/.env.example` a `backend/.env` y configurar `DATABASE_URL`.
+2. Copiar `backend/.env.example` a `backend/.env` y configurar `DATABASE_URL`
+   (obligatoria: sin ella el backend no arranca).
 3. (Opcional) cargar datos de ejemplo:
    ```bash
    python -m app.utils.seed_data

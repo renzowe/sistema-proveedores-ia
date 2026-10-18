@@ -3,6 +3,12 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 from app.config import settings
 
+if not settings.DATABASE_URL:
+    raise RuntimeError(
+        "Falta DATABASE_URL: defínela en backend/.env (ver backend/.env.example), "
+        "en docker-compose o en las variables de entorno del servidor."
+    )
+
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True
