@@ -30,6 +30,7 @@ services:
       LLM_ENABLED: ${LLM_ENABLED:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-4-5-20251001}
+      ASISTENTE_CODIGO_ACCESO: ${ASISTENTE_CODIGO_ACCESO:-}
       CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8080}
     depends_on:
       db:

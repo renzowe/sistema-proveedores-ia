@@ -30,12 +30,14 @@ class LimitadorUso:
         limite_por_cliente: Callable[[], int],
         ventana_segundos: Callable[[], int],
         limite_diario: Callable[[], int],
+        aviso_por_cliente: str = "Has enviado demasiados mensajes seguidos. Espera {espera} antes de volver a escribir.",
     ) -> None:
         # Los límites se leen en cada llamada (no se copian al construir) para
         # que la configuración pueda cambiarse en pruebas sin recrear el objeto.
         self._limite_por_cliente = limite_por_cliente
         self._ventana_segundos = ventana_segundos
         self._limite_diario = limite_diario
+        self._aviso_por_cliente = aviso_por_cliente
         self._lock = threading.Lock()
         self._por_cliente: Dict[str, Deque[float]] = {}
         self._dia_actual = ""
@@ -43,6 +45,13 @@ class LimitadorUso:
 
     def registrar(self, cliente: str) -> None:
         """Registra una petición del cliente o lanza HTTP 429 si supera algún límite."""
+        self._procesar(cliente, anotar=True)
+
+    def comprobar(self, cliente: str) -> None:
+        """Lanza HTTP 429 si el cliente ya alcanzó algún límite, sin contar esta petición."""
+        self._procesar(cliente, anotar=False)
+
+    def _procesar(self, cliente: str, anotar: bool) -> None:
         ahora = time.monotonic()
         hoy = datetime.now(timezone.utc).date().isoformat()
         ventana = self._ventana_segundos()
@@ -68,9 +77,12 @@ class LimitadorUso:
                 texto_espera = f"{espera} segundos" if espera < 60 else f"{minutos} minuto{'s' if minutos > 1 else ''}"
                 raise HTTPException(
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail=f"Has enviado demasiados mensajes seguidos. Espera {texto_espera} antes de volver a escribir.",
+                    detail=self._aviso_por_cliente.format(espera=texto_espera),
                     headers={"Retry-After": str(espera)},
                 )
+
+            if not anotar:
+                return
 
             marcas.append(ahora)
             self._contador_diario += 1

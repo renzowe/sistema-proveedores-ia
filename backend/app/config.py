@@ -41,6 +41,12 @@ class Settings:
     ASISTENTE_VENTANA_SEGUNDOS: int = int(os.getenv("ASISTENTE_VENTANA_SEGUNDOS", "600"))
     ASISTENTE_LIMITE_DIARIO: int = int(os.getenv("ASISTENTE_LIMITE_DIARIO", "200"))
 
+    # Código de acceso al asistente con Claude real. Vacío = no se pide
+    # (desarrollo local). En producción debe definirse: sin el código correcto
+    # el chat responde en modo demostración y no consume la API Key.
+    ASISTENTE_CODIGO_ACCESO: str = os.getenv("ASISTENTE_CODIGO_ACCESO", "").strip()
+    ASISTENTE_INTENTOS_CODIGO: int = int(os.getenv("ASISTENTE_INTENTOS_CODIGO", "5"))
+
     # Configuración de la capa de IA (Claude, vía API de Anthropic).
     # LLM_ENABLED controla si la capa `app/ai` puede intentar comunicarse con el LLM.
     # Con LLM_ENABLED=false (o sin ANTHROPIC_API_KEY) el sistema sigue

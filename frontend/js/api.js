@@ -14,14 +14,15 @@ const API_ROOT_URL = typeof APP_CONFIG.apiRootUrl === 'string'
 const API_BASE_URL = `${API_ROOT_URL}/api/v1`;
 
 async function apiFetch(endpoint, options = {}) {
+    const { headers, ...resto } = options;
     let response;
     try {
         response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...resto,
             headers: {
                 'Content-Type': 'application/json',
-                ...options.headers,
+                ...headers,
             },
-            ...options,
         });
     } catch (networkError) {
         throw new Error('No se pudo conectar con el servidor. Verifica que el backend esté en ejecución.');
@@ -44,6 +45,10 @@ async function apiFetch(endpoint, options = {}) {
     }
 
     return data;
+}
+
+function cabeceraCodigoAsistente(codigo) {
+    return codigo ? { 'X-Codigo-Asistente': codigo } : {};
 }
 
 function buildQuery(params = {}) {
@@ -101,8 +106,12 @@ const api = {
         procesar: (id) => apiFetch(`/evaluaciones/${id}/procesar`, { method: 'POST' }),
         resultados: (id) => apiFetch(`/evaluaciones/${id}/resultados`),
         informeAgentes: (id) => apiFetch(`/evaluaciones/${id}/informe-agentes`),
-        asistenteEstado: () => apiFetch('/evaluaciones/asistente/estado'),
-        asistenteMensaje: (payload) => apiFetch('/evaluaciones/asistente/mensaje', { method: 'POST', body: JSON.stringify(payload) }),
+        asistenteEstado: (codigo) => apiFetch('/evaluaciones/asistente/estado', { headers: cabeceraCodigoAsistente(codigo) }),
+        asistenteMensaje: (payload, codigo) => apiFetch('/evaluaciones/asistente/mensaje', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: cabeceraCodigoAsistente(codigo),
+        }),
         create: (data) => apiFetch('/evaluaciones/', { method: 'POST', body: JSON.stringify(data) }),
         remove: (id) => apiFetch(`/evaluaciones/${id}`, { method: 'DELETE' }),
     },

@@ -97,6 +97,14 @@ primero una llamada real a Claude (multi-turno, vía `LLMRequest.historial`/
 llamada falla o no está disponible.
 
 **Protección del endpoint** (es público y, con API Key, cada mensaje cuesta):
+- Código de acceso (`ASISTENTE_CODIGO_ACCESO`): si está definido, solo las
+  peticiones con la cabecera `X-Codigo-Asistente` correcta usan Claude; el
+  resto responde en modo demostración, sin consumir la API Key. El chat lo
+  pide con el botón "Usar Claude" y lo recuerda mientras la pestaña esté
+  abierta (`sessionStorage`). Se compara en tiempo constante y se permiten
+  `ASISTENTE_INTENTOS_CODIGO` intentos fallidos por IP en la ventana del
+  limitador (después, HTTP 429). Vacío = no se pide código; si además Claude
+  está activo, el backend lo advierte en los registros al arrancar.
 - Límite de uso en memoria (`app/utils/limite_uso.py`): como máximo
   `ASISTENTE_LIMITE_POR_IP` mensajes por IP cada `ASISTENTE_VENTANA_SEGUNDOS`,
   y `ASISTENTE_LIMITE_DIARIO` mensajes por día sumando todos los clientes.
@@ -118,6 +126,8 @@ CORS_ORIGINS=http://localhost:5500,http://127.0.0.1:5500   # en producción: URL
 ASISTENTE_LIMITE_POR_IP=20
 ASISTENTE_VENTANA_SEGUNDOS=600
 ASISTENTE_LIMITE_DIARIO=200
+ASISTENTE_CODIGO_ACCESO=   # en producción: obligatorio antes de LLM_ENABLED=true
+ASISTENTE_INTENTOS_CODIGO=5
 ```
 
 `CORS_ORIGINS` define qué dominios pueden llamar a la API desde el navegador.

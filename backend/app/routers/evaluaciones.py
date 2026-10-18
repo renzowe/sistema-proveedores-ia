@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+import hmac
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
@@ -22,16 +23,56 @@ limitador_asistente = LimitadorUso(
     limite_diario=lambda: settings.ASISTENTE_LIMITE_DIARIO,
 )
 
+# Cuenta solo los intentos con un código de acceso incorrecto (anti fuerza bruta).
+limitador_codigo = LimitadorUso(
+    limite_por_cliente=lambda: settings.ASISTENTE_INTENTOS_CODIGO,
+    ventana_segundos=lambda: settings.ASISTENTE_VENTANA_SEGUNDOS,
+    limite_diario=lambda: 100_000,
+    aviso_por_cliente="Demasiados intentos con un código de acceso incorrecto. Espera {espera} antes de volver a intentarlo.",
+)
+
+CABECERA_CODIGO = "X-Codigo-Asistente"
+
+
+def _acceso_a_claude(request: Request) -> Tuple[bool, Optional[bool]]:
+    """
+    Devuelve (puede_usar_claude, codigo_valido). Sin ASISTENTE_CODIGO_ACCESO
+    configurado no se pide código. Con él, solo el código correcto permite
+    usar Claude; si no, el asistente responde en modo demostración.
+    """
+    codigo_configurado = settings.ASISTENTE_CODIGO_ACCESO
+    if not codigo_configurado:
+        return True, None
+
+    codigo = request.headers.get(CABECERA_CODIGO, "").strip()
+    if not codigo:
+        return False, None
+
+    # Se comprueba el límite ANTES de comparar: pasado el límite de intentos
+    # fallidos, ni siquiera el código correcto se acepta hasta que expire.
+    ip = obtener_ip_cliente(request)
+    limitador_codigo.comprobar(ip)
+    if hmac.compare_digest(codigo.encode("utf-8"), codigo_configurado.encode("utf-8")):
+        return True, True
+    limitador_codigo.registrar(ip)
+    return False, False
+
 
 @router.get("/asistente/estado")
-def obtener_estado_asistente() -> Dict[str, Any]:
-    return AsistenteService.estado()
+def obtener_estado_asistente(request: Request) -> Dict[str, Any]:
+    acceso, codigo_valido = _acceso_a_claude(request)
+    return AsistenteService.estado(
+        permitir_llm=acceso,
+        requiere_codigo=bool(settings.ASISTENTE_CODIGO_ACCESO),
+        codigo_valido=codigo_valido,
+    )
 
 
 @router.post("/asistente/mensaje", response_model=AsistenteMensajeOut)
 def enviar_mensaje_asistente(payload: AsistenteMensajeIn, request: Request, db: Session = Depends(get_db)):
     limitador_asistente.registrar(obtener_ip_cliente(request))
-    return AsistenteService.procesar_mensaje(db=db, payload=payload)
+    acceso, _ = _acceso_a_claude(request)
+    return AsistenteService.procesar_mensaje(db=db, payload=payload, permitir_llm=acceso)
 
 
 @router.get("/", response_model=List[EvaluacionResponse])

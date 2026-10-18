@@ -305,6 +305,44 @@ tr.linea-sin-coincidencia > td:first-child {
     padding: 0.85rem 1.1rem 0;
 }
 
+.chat-cabecera-acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.chat-codigo {
+    padding: 0.85rem 1.1rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+}
+
+.chat-codigo-fila {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.chat-codigo-fila input {
+    flex: 1;
+    min-width: 0;
+    font-family: inherit;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text-primary);
+}
+
+.chat-codigo-error {
+    color: var(--danger);
+}
+
 .chat-contexto-chip {
     color: var(--ai-accent);
 }

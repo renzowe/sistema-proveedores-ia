@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 from app.ai.llm_client import LLMClient, LLMResponse
 from app.config import settings
 from app.main import app
-from app.routers.evaluaciones import limitador_asistente
+from app.routers.evaluaciones import limitador_asistente, limitador_codigo
 from app.schemas.asistente import MensajeChatIn
 from app.services.asistente_service import AsistenteService
 
@@ -34,11 +34,13 @@ def entorno_controlado(request, monkeypatch):
     # las pruebas cuyo nombre contiene "modo_real" usan la configuración real.
     if "modo_real" not in request.node.name:
         monkeypatch.setattr(settings, "LLM_ENABLED", False)
-    # El limitador guarda estado en memoria del proceso: se limpia entre
+    # Los limitadores guardan estado en memoria del proceso: se limpian entre
     # pruebas para que unas no consuman el cupo de otras.
     limitador_asistente.reiniciar()
+    limitador_codigo.reiniciar()
     yield
     limitador_asistente.reiniciar()
+    limitador_codigo.reiniciar()
 
 
 def _mensaje(texto, borrador=None, evaluacion_id=None):
@@ -328,6 +330,87 @@ def test_cors_solo_autoriza_los_origenes_configurados():
 
     ajeno = client.options(ENDPOINT, headers={"Origin": "https://sitio-ajeno.example", **preflight})
     assert "access-control-allow-origin" not in ajeno.headers
+
+
+# --- Código de acceso al asistente con Claude (ASISTENTE_CODIGO_ACCESO) -----
+
+CODIGO = "clave-de-prueba-123"
+ESTADO = "/api/v1/evaluaciones/asistente/estado"
+
+
+@pytest.fixture
+def claude_simulado(monkeypatch):
+    """Simula un Claude disponible sin llamadas externas; cuenta las llamadas."""
+    llamadas = []
+    respuesta = '{"respuesta_usuario": "Anotado.", "borrador": {"titulo": null, "productos": []}, "listo_para_confirmar": false}'
+
+    def generar(self, request):
+        llamadas.append(request)
+        return LLMResponse(contenido=respuesta, modelo="simulado", exitoso=True)
+
+    monkeypatch.setattr(LLMClient, "esta_disponible", lambda self: True)
+    monkeypatch.setattr(LLMClient, "generate", generar)
+    return llamadas
+
+
+def test_sin_codigo_configurado_no_se_pide_codigo(monkeypatch, claude_simulado):
+    monkeypatch.setattr(settings, "ASISTENTE_CODIGO_ACCESO", "")
+    estado = client.get(ESTADO).json()
+    assert estado["modo"] == "real"
+    assert estado["requiere_codigo"] is False
+    assert client.post(ENDPOINT, json=_mensaje("Hola")).json()["modo"] == "real"
+
+
+def test_con_codigo_configurado_sin_codigo_responde_en_demostracion(monkeypatch, claude_simulado):
+    monkeypatch.setattr(settings, "ASISTENTE_CODIGO_ACCESO", CODIGO)
+    estado = client.get(ESTADO).json()
+    assert estado["modo"] == "demostracion"
+    assert estado["requiere_codigo"] is True
+    assert estado["codigo_valido"] is None
+
+    respuesta = client.post(ENDPOINT, json=_mensaje("Necesito 2 laptops")).json()
+    assert respuesta["modo"] == "demostracion"
+    assert claude_simulado == []  # no se gastó ninguna llamada a Claude
+
+
+def test_codigo_correcto_usa_claude(monkeypatch, claude_simulado):
+    monkeypatch.setattr(settings, "ASISTENTE_CODIGO_ACCESO", CODIGO)
+    cabecera = {"X-Codigo-Asistente": CODIGO}
+
+    estado = client.get(ESTADO, headers=cabecera).json()
+    assert estado["modo"] == "real"
+    assert estado["codigo_valido"] is True
+
+    respuesta = client.post(ENDPOINT, json=_mensaje("Hola"), headers=cabecera).json()
+    assert respuesta["modo"] == "real"
+    assert len(claude_simulado) == 1
+
+
+def test_codigo_incorrecto_no_usa_claude_y_bloquea_tras_varios_intentos(monkeypatch, claude_simulado):
+    monkeypatch.setattr(settings, "ASISTENTE_CODIGO_ACCESO", CODIGO)
+    monkeypatch.setattr(settings, "ASISTENTE_INTENTOS_CODIGO", 2)
+    incorrecto = {"X-Codigo-Asistente": "adivinando"}
+
+    for _ in range(2):
+        estado = client.get(ESTADO, headers=incorrecto).json()
+        assert estado["codigo_valido"] is False
+        assert estado["modo"] == "demostracion"
+
+    # Agotados los intentos, ni siquiera el código correcto se acepta hasta que expire la ventana.
+    bloqueado = client.get(ESTADO, headers={"X-Codigo-Asistente": CODIGO})
+    assert bloqueado.status_code == 429
+    assert "código de acceso incorrecto" in bloqueado.json()["detail"]
+    assert claude_simulado == []
+
+
+def test_cors_permite_la_cabecera_del_codigo():
+    preflight = client.options(ENDPOINT, headers={
+        "Origin": settings.CORS_ORIGINS[0],
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type,x-codigo-asistente",
+    })
+    assert preflight.status_code == 200
+    assert "x-codigo-asistente" in preflight.headers.get("access-control-allow-headers", "").lower()
 
 
 # --- Modo real (gateado; se salta sin ANTHROPIC_API_KEY configurada) --------

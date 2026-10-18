@@ -13,6 +13,27 @@
 const ASISTENTE_MAX_MENSAJES_ENVIADOS = 20;
 const ASISTENTE_MAX_CARACTERES_MENSAJE = 2000;
 
+// El código de acceso dura lo que la pestaña (sessionStorage): sirve en todas
+// las páginas mientras esté abierta y se olvida al cerrarla.
+const CLAVE_CODIGO_ASISTENTE = 'asistenteCodigoAcceso';
+
+function leerCodigoAsistente() {
+    try {
+        return sessionStorage.getItem(CLAVE_CODIGO_ASISTENTE) || '';
+    } catch {
+        return '';
+    }
+}
+
+function guardarCodigoAsistente(codigo) {
+    try {
+        if (codigo) sessionStorage.setItem(CLAVE_CODIGO_ASISTENTE, codigo);
+        else sessionStorage.removeItem(CLAVE_CODIGO_ASISTENTE);
+    } catch {
+        // Sin almacenamiento disponible: el código solo dura en esta página.
+    }
+}
+
 function esEntornoDesarrollo() {
     return (typeof isLocalHost !== 'undefined' && isLocalHost) || window.location.search.includes('debug=1');
 }
@@ -46,6 +67,14 @@ function initAsistente({
     let ultimoDebug = null; // { payload, respuesta } del último turno — solo para el panel de desarrollo
     let reenfocarTrasEnvio = false;
 
+    // Código de acceso (solo si el backend define ASISTENTE_CODIGO_ACCESO).
+    let codigoAcceso = leerCodigoAsistente();
+    let requiereCodigo = false;
+    let formCodigoAbierto = false;
+    let enfocarCodigo = false;
+    let validandoCodigo = false;
+    let errorCodigo = null;
+
     function textoBienvenida() {
         if (modo === 'explicacion' && !evaluacionId) {
             return 'Elige una evaluación para que pueda explicarte su resultado.';
@@ -69,6 +98,32 @@ function initAsistente({
         return '<span class="badge badge-neutral">Comprobando…</span>';
     }
 
+    function accionesCabeceraHTML() {
+        let botones = '';
+        if (requiereCodigo && estadoLLM === 'demostracion' && !formCodigoAbierto) {
+            botones = '<button type="button" class="btn btn-secondary btn-sm" data-accion="abrir-codigo">Usar Claude</button>';
+        } else if (requiereCodigo && estadoLLM === 'real') {
+            botones = '<button type="button" class="btn btn-ghost btn-sm" data-accion="salir-codigo" title="Olvidar el código en este navegador">Salir</button>';
+        }
+        return `<div class="chat-cabecera-acciones">${badgeEstadoHTML()}${botones}</div>`;
+    }
+
+    function formCodigoHTML(valorPrevio) {
+        if (!formCodigoAbierto) return '';
+        return `
+            <form class="chat-codigo" id="${contenedorId}-codigo-form">
+                <label for="${contenedorId}-codigo">Código de acceso para usar Claude</label>
+                <div class="chat-codigo-fila">
+                    <input type="password" id="${contenedorId}-codigo" autocomplete="off" maxlength="200"
+                        value="${escapeHtml(valorPrevio)}" ${validandoCodigo ? 'disabled' : ''}>
+                    <button type="submit" class="btn btn-primary btn-sm" ${validandoCodigo ? 'disabled' : ''}>${validandoCodigo ? 'Comprobando…' : 'Entrar'}</button>
+                    <button type="button" class="btn btn-ghost btn-sm" data-accion="cancelar-codigo">Cancelar</button>
+                </div>
+                ${errorCodigo ? `<div class="chat-codigo-error" role="alert">${escapeHtml(errorCodigo)}</div>` : ''}
+            </form>
+        `;
+    }
+
     function avisoHTML() {
         if (estadoLLM === 'sin-conexion') {
             return `<div class="chat-aviso">${renderAlert({
@@ -78,10 +133,13 @@ function initAsistente({
             })}</div>`;
         }
         if (estadoLLM === 'demostracion') {
+            const motivo = requiereCodigo
+                ? 'El asistente con IA real requiere un código de acceso (botón "Usar Claude"). Mientras tanto, las respuestas se generan con reglas simples, sin IA real.'
+                : 'No hay una API Key de Anthropic configurada: las respuestas se generan con reglas simples, sin IA real.';
             return `<div class="chat-aviso">${renderAlert({
                 type: 'warning',
                 title: 'Modo demostración',
-                body: 'No hay una API Key de Anthropic configurada: las respuestas se generan con reglas simples, sin IA real. Los puntajes siempre los calcula el motor determinístico.',
+                body: `${motivo} Los puntajes siempre los calcula el motor determinístico.`,
             })}</div>`;
         }
         return '';
@@ -104,6 +162,7 @@ function initAsistente({
         const textareaPrevio = document.getElementById(`${contenedorId}-input`);
         const borradorTexto = textareaPrevio ? textareaPrevio.value : '';
         const teniaFoco = Boolean(textareaPrevio) && document.activeElement === textareaPrevio;
+        const codigoPrevio = document.getElementById(`${contenedorId}-codigo`)?.value || '';
         const inputDeshabilitado = enviando || (modo === 'explicacion' && !evaluacionId);
 
         contenedor.innerHTML = `
@@ -113,8 +172,9 @@ function initAsistente({
                         <h2>${icon('sparkles', { size: 16 })} Asistente conversacional</h2>
                         ${contextoLabel ? `<div class="card-subtitle chat-contexto-chip">${escapeHtml(contextoLabel)}</div>` : ''}
                     </div>
-                    ${badgeEstadoHTML()}
+                    ${accionesCabeceraHTML()}
                 </div>
+                ${formCodigoHTML(codigoPrevio)}
                 ${avisoHTML()}
                 <div class="chat-mensajes" id="${contenedorId}-mensajes">
                     <div class="chat-burbuja asistente bienvenida">
@@ -161,19 +221,90 @@ function initAsistente({
             textarea.focus();
             textarea.setSelectionRange(textarea.value.length, textarea.value.length);
         }
+
+        contenedor.querySelector('[data-accion="abrir-codigo"]')?.addEventListener('click', () => {
+            formCodigoAbierto = true;
+            enfocarCodigo = true;
+            errorCodigo = null;
+            render();
+        });
+        contenedor.querySelector('[data-accion="cancelar-codigo"]')?.addEventListener('click', () => {
+            formCodigoAbierto = false;
+            errorCodigo = null;
+            render();
+        });
+        contenedor.querySelector('[data-accion="salir-codigo"]')?.addEventListener('click', () => {
+            codigoAcceso = '';
+            guardarCodigoAsistente('');
+            consultarEstado();
+        });
+        const formCodigo = document.getElementById(`${contenedorId}-codigo-form`);
+        if (formCodigo) {
+            const inputCodigo = document.getElementById(`${contenedorId}-codigo`);
+            formCodigo.addEventListener('submit', (e) => {
+                e.preventDefault();
+                validarCodigo(inputCodigo.value.trim());
+            });
+            if (enfocarCodigo && !inputCodigo.disabled) {
+                enfocarCodigo = false;
+                inputCodigo.focus();
+            }
+        }
+    }
+
+    function aplicarEstado(data) {
+        requiereCodigo = Boolean(data.requiere_codigo);
+        estadoLLM = data.modo === 'real' ? 'real' : 'demostracion';
+        modeloLLM = data.modelo || null;
+        errorConexion = null;
     }
 
     async function consultarEstado() {
         try {
-            const data = await api.evaluaciones.asistenteEstado();
-            estadoLLM = data.modo === 'real' ? 'real' : 'demostracion';
-            modeloLLM = data.modelo || null;
-            errorConexion = null;
+            const data = await api.evaluaciones.asistenteEstado(codigoAcceso);
+            if (data.codigo_valido === false) {
+                // El código guardado ya no sirve (p. ej. se cambió en el servidor).
+                codigoAcceso = '';
+                guardarCodigoAsistente('');
+                formCodigoAbierto = true;
+                errorCodigo = 'El código guardado ya no es válido. Introdúcelo de nuevo.';
+            }
+            aplicarEstado(data);
         } catch (err) {
             estadoLLM = 'sin-conexion';
             errorConexion = err.message;
         }
         render();
+    }
+
+    async function validarCodigo(codigo) {
+        if (!codigo) {
+            errorCodigo = 'Escribe el código de acceso.';
+            enfocarCodigo = true;
+            render();
+            return;
+        }
+        validandoCodigo = true;
+        errorCodigo = null;
+        render();
+        try {
+            const data = await api.evaluaciones.asistenteEstado(codigo);
+            if (data.codigo_valido) {
+                codigoAcceso = codigo;
+                guardarCodigoAsistente(codigo);
+                formCodigoAbierto = false;
+                reenfocarTrasEnvio = true;
+                aplicarEstado(data);
+            } else {
+                errorCodigo = 'Código incorrecto.';
+                enfocarCodigo = true;
+            }
+        } catch (err) {
+            errorCodigo = err.message;
+        } finally {
+            validandoCodigo = false;
+            render();
+        }
     }
 
     async function enviarMensaje(texto) {
@@ -194,9 +325,12 @@ function initAsistente({
         }
 
         try {
-            const data = await api.evaluaciones.asistenteMensaje(payload);
+            const data = await api.evaluaciones.asistenteMensaje(payload, codigoAcceso);
             mensajes.push({ rol: 'asistente', contenido: data.respuesta, modo: data.modo });
             ultimoDebug = { payload, respuesta: data };
+            if (requiereCodigo && estadoLLM === 'real' && data.modo === 'demostracion') {
+                consultarEstado(); // el código pudo cambiar en el servidor
+            }
             if (estadoLLM === 'sin-conexion' || estadoLLM === 'comprobando') {
                 estadoLLM = data.modo === 'real' ? 'real' : 'demostracion';
             }

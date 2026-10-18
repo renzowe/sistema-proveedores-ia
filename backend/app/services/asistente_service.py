@@ -83,17 +83,29 @@ def _entero_o_none(valor: Any) -> Optional[int]:
 
 class AsistenteService:
     @staticmethod
-    def estado() -> Dict[str, Any]:
+    def estado(
+        permitir_llm: bool = True,
+        requiere_codigo: bool = False,
+        codigo_valido: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """
+        `permitir_llm` es False cuando hace falta un código de acceso y la
+        petición no trae uno válido: entonces el chat funciona en modo
+        demostración aunque haya una API Key configurada.
+        """
         llm_client = LLMClient()
-        disponible = llm_client.esta_disponible()
+        llm_configurado = llm_client.esta_disponible()
+        disponible = llm_configurado and permitir_llm
         return {
             "modo": "real" if disponible else "demostracion",
             "proveedor": "anthropic",
             "modelo": llm_client.model if disponible else None,
+            "requiere_codigo": requiere_codigo and llm_configurado,
+            "codigo_valido": codigo_valido,
         }
 
     @staticmethod
-    def procesar_mensaje(db: Session, payload: AsistenteMensajeIn) -> AsistenteMensajeOut:
+    def procesar_mensaje(db: Session, payload: AsistenteMensajeIn, permitir_llm: bool = True) -> AsistenteMensajeOut:
         if not payload.mensajes:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -114,13 +126,13 @@ class AsistenteService:
             )
 
         if payload.evaluacion_id is not None:
-            return AsistenteService._modo_explicacion(db, payload)
-        return AsistenteService._modo_borrador(db, payload)
+            return AsistenteService._modo_explicacion(db, payload, permitir_llm)
+        return AsistenteService._modo_borrador(db, payload, permitir_llm)
 
     # --- Modo "explicar resultados" (contexto = evaluación ya existente) ---
 
     @staticmethod
-    def _modo_explicacion(db: Session, payload: AsistenteMensajeIn) -> AsistenteMensajeOut:
+    def _modo_explicacion(db: Session, payload: AsistenteMensajeIn, permitir_llm: bool) -> AsistenteMensajeOut:
         evaluacion = EvaluacionService.obtener_por_id(db, payload.evaluacion_id)
         resultados = EvaluacionService.obtener_resultados(db, payload.evaluacion_id)
 
@@ -150,7 +162,7 @@ class AsistenteService:
         datos_reales = _datos_reales_para_explicacion(resultados, cobertura)
         llm_client = LLMClient()
 
-        if llm_client.esta_disponible():
+        if permitir_llm and llm_client.esta_disponible():
             respuesta_real = AsistenteService._explicacion_real(llm_client, payload, datos_reales)
             if respuesta_real is not None:
                 return AsistenteMensajeOut(
@@ -242,12 +254,12 @@ class AsistenteService:
     # --- Modo "armar borrador" (sin evaluación de contexto) -----------------
 
     @staticmethod
-    def _modo_borrador(db: Session, payload: AsistenteMensajeIn) -> AsistenteMensajeOut:
+    def _modo_borrador(db: Session, payload: AsistenteMensajeIn, permitir_llm: bool) -> AsistenteMensajeOut:
         llm_client = LLMClient()
         modo = "demostracion"
         resultado = None
 
-        if llm_client.esta_disponible():
+        if permitir_llm and llm_client.esta_disponible():
             resultado = AsistenteService._turno_real(llm_client, payload)
             if resultado is not None:
                 modo = "real"

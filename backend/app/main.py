@@ -1,8 +1,10 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.ai.llm_client import LLMClient
 from app.config import settings
 from app.database import init_db
 from app.routers import (
@@ -17,6 +19,11 @@ from app.routers import (
 async def lifespan(app: FastAPI):
     # Crea las tablas que falten al arrancar.
     init_db()
+    if LLMClient().esta_disponible() and not settings.ASISTENTE_CODIGO_ACCESO:
+        logging.getLogger("uvicorn.error").warning(
+            "El asistente usa Claude real SIN código de acceso: cualquiera con el enlace "
+            "puede consumir la API Key. En producción define ASISTENTE_CODIGO_ACCESO."
+        )
     yield
 
 
@@ -34,7 +41,7 @@ app.add_middleware(
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["Content-Type"],
+    allow_headers=["Content-Type", "X-Codigo-Asistente"],
 )
 
 # Incluir routers bajo /api/v1 como prefijo oficial
