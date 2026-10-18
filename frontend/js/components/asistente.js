@@ -17,6 +17,13 @@ function esEntornoDesarrollo() {
     return (typeof isLocalHost !== 'undefined' && isLocalHost) || window.location.search.includes('debug=1');
 }
 
+// Claude puede devolver **negritas** aunque se le pida texto plano: se
+// muestran como negrita en vez de asteriscos. El texto se escapa antes de
+// sustituir, así que no puede inyectarse HTML.
+function formatearRespuestaAsistente(texto) {
+    return escapeHtml(texto).replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+}
+
 function initAsistente({
     modo,                               // 'borrador' | 'explicacion'
     contenedorId,
@@ -88,7 +95,7 @@ function initAsistente({
         return `
             <div class="chat-burbuja ${esUsuario ? 'usuario' : 'asistente'} ${m.esError ? 'error' : ''}">
                 ${badgeModo}
-                <div class="chat-burbuja-texto">${escapeHtml(m.contenido)}</div>
+                <div class="chat-burbuja-texto">${esUsuario ? escapeHtml(m.contenido) : formatearRespuestaAsistente(m.contenido)}</div>
             </div>
         `;
     }

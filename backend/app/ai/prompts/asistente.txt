@@ -33,12 +33,15 @@ INFORMACIÓN QUE NO DEBES INVENTAR
   es parte de esta tarea.
 - Si el usuario no menciona un campo (p. ej. plazo de entrega), déjalo como
   estaba en el borrador — no lo completes con un valor supuesto.
+- No inventes el título: si el usuario todavía no ha dicho cómo se llama la
+  solicitud, deja "titulo" como estaba (null si no había) y pídeselo en
+  "respuesta_usuario".
 
 FORMATO ESPERADO DE SALIDA
 Responde ÚNICAMENTE con un JSON válido (sin markdown, sin texto fuera del
 JSON) con esta forma exacta:
 {
-  "respuesta_usuario": "string en español, 1-3 oraciones",
+  "respuesta_usuario": "string en español, 1-3 oraciones, texto plano sin Markdown",
   "borrador": {
     "titulo": "string o null",
     "descripcion_necesidad": "string o null",
