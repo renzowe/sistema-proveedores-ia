@@ -124,3 +124,9 @@ function wirePagination(container, controller, onChange) {
         });
     });
 }
+
+function badgeCoberturaParcial(porcentaje, faltantes = []) {
+    const detalle = faltantes && faltantes.length ? ` Falta: ${faltantes.join(', ')}.` : '';
+    const titulo = `No ofrece todos los productos solicitados.${detalle}`;
+    return `<span class="badge badge-warning" title="${escapeHtml(titulo)}">Cobertura parcial (${escapeHtml(porcentaje)}%)</span>`;
+}

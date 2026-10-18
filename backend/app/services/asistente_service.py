@@ -139,7 +139,15 @@ class AsistenteService:
                 contexto_evaluacion_id=payload.evaluacion_id,
             )
 
-        datos_reales = _datos_reales_para_explicacion(resultados)
+        compatibles = EvaluacionService.buscar_proveedores_compatibles(db, payload.evaluacion_id)
+        cobertura = {
+            p["proveedor_id"]: {
+                "cobertura_porcentaje": p["cobertura_porcentaje"],
+                "productos_faltantes": [f["nombre_producto"] for f in p["productos_faltantes"]],
+            }
+            for p in compatibles["proveedores_compatibles"]
+        }
+        datos_reales = _datos_reales_para_explicacion(resultados, cobertura)
         llm_client = LLMClient()
 
         if llm_client.esta_disponible():
@@ -217,6 +225,14 @@ class AsistenteService:
         if top_criterios:
             detalle = " y ".join(f"{_NOMBRES_CRITERIOS.get(k, k)} ({v:.1f})" for k, v in top_criterios)
             partes.append(f"Los criterios que más influyeron fueron {detalle}.")
+
+        for r in ranking:
+            if r["puntajes"]["final"] > puntajes["final"] and r.get("cobertura_porcentaje", 100) < 100:
+                faltantes = ", ".join(r.get("productos_faltantes") or [])
+                partes.append(
+                    f'{r["proveedor"]} obtuvo más puntaje ({r["puntajes"]["final"]:.1f}), pero no puede '
+                    f"recomendarse porque no ofrece todos los productos solicitados (le falta: {faltantes})."
+                )
 
         if len(ranking) > 1:
             partes.append(f"Se compararon {len(ranking)} proveedores en total.")

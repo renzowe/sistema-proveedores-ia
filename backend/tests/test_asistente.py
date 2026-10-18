@@ -28,7 +28,12 @@ ENDPOINT = "/api/v1/evaluaciones/asistente/mensaje"
 
 
 @pytest.fixture(autouse=True)
-def limitador_limpio():
+def entorno_controlado(request, monkeypatch):
+    # Estas pruebas verifican el modo demostración: se fuerza aunque haya una
+    # API Key configurada, para no depender de ella ni gastar tokens. Solo
+    # las pruebas cuyo nombre contiene "modo_real" usan la configuración real.
+    if "modo_real" not in request.node.name:
+        monkeypatch.setattr(settings, "LLM_ENABLED", False)
     # El limitador guarda estado en memoria del proceso: se limpia entre
     # pruebas para que unas no consuman el cupo de otras.
     limitador_asistente.reiniciar()

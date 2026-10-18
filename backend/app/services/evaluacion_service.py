@@ -57,32 +57,42 @@ def _buscar_producto_similar(nombre_detectado: str, catalogo: List[Producto]) ->
     return mejor_producto if mejor_score > 0 else None
 
 
-def _datos_reales_para_explicacion(resultados: Dict[str, Any]) -> Dict[str, Any]:
+def _datos_reales_para_explicacion(
+    resultados: Dict[str, Any],
+    cobertura: Optional[Dict[int, Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
     """
     Recorta `obtener_resultados()` a únicamente los campos reales (ya
     calculados por el motor determinístico) que un LLM puede usar para
     explicar un resultado — nunca más que esto, para que no tenga forma de
     inventar proveedores, puntajes ni recomendaciones. Lo usa
-    `AsistenteService` en el modo explicación.
+    `AsistenteService` en el modo explicación. `cobertura` (por proveedor_id)
+    añade qué parte del pedido cubre cada proveedor, para que pueda explicarse
+    por qué uno con mayor puntaje no fue el recomendado.
     """
+    ranking = []
+    for r in resultados["ranking"]:
+        item = {
+            "proveedor": r["proveedor_nombre"],
+            "recomendado": r["recomendado"],
+            "puntajes": {
+                "precio": r["puntaje_precio"],
+                "calidad": r["puntaje_calidad"],
+                "logistica": r["puntaje_logistica"],
+                "historial": r["puntaje_historial"],
+                "riesgo": r["puntaje_riesgo"],
+                "final": r["puntaje_final"],
+            },
+        }
+        if cobertura and r["proveedor_id"] in cobertura:
+            item["cobertura_porcentaje"] = cobertura[r["proveedor_id"]]["cobertura_porcentaje"]
+            item["productos_faltantes"] = cobertura[r["proveedor_id"]]["productos_faltantes"]
+        ranking.append(item)
+
     return {
         "titulo": resultados["titulo"],
         "prioridad_aplicada": resultados["prioridad"],
-        "ranking": [
-            {
-                "proveedor": r["proveedor_nombre"],
-                "recomendado": r["recomendado"],
-                "puntajes": {
-                    "precio": r["puntaje_precio"],
-                    "calidad": r["puntaje_calidad"],
-                    "logistica": r["puntaje_logistica"],
-                    "historial": r["puntaje_historial"],
-                    "riesgo": r["puntaje_riesgo"],
-                    "final": r["puntaje_final"],
-                },
-            }
-            for r in resultados["ranking"]
-        ],
+        "ranking": ranking,
     }
 
 

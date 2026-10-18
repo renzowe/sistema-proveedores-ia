@@ -226,7 +226,8 @@ async function renderProcesada(id) {
                         ${detalles.map((d, idx) => `
                             <tr>
                                 <td class="cell-muted">${idx + 1}</td>
-                                <td class="${d.recomendado ? 'is-recommended' : ''}">${escapeHtml(d.proveedor ? d.proveedor.razon_social : `Proveedor #${d.proveedor_id}`)}${d.recomendado ? ' ★' : ''}</td>
+                                <td class="${d.recomendado ? 'is-recommended' : ''}">${escapeHtml(d.proveedor ? d.proveedor.razon_social : `Proveedor #${d.proveedor_id}`)}${d.recomendado ? ' ★' : ''}
+                                    <span data-cobertura-prov="${d.proveedor_id}"></span></td>
                                 <td>${Number(d.puntaje_precio).toFixed(1)}</td>
                                 <td>${Number(d.puntaje_calidad).toFixed(1)}</td>
                                 <td>${Number(d.puntaje_logistica).toFixed(1)}</td>
@@ -271,11 +272,23 @@ async function renderProcesada(id) {
     await cargarInformeAgentes(id);
 }
 
+// La cobertura no se guarda con el resultado: llega en el informe de agentes,
+// que se calcula sobre el catálogo actual.
+function marcarCoberturaParcialEnRanking() {
+    (informeAgentesActual?.ranking || []).forEach((r) => {
+        const celda = document.querySelector(`[data-cobertura-prov="${r.proveedor_id}"]`);
+        if (celda && r.cobertura_completa === false) {
+            celda.innerHTML = badgeCoberturaParcial(r.cobertura_porcentaje, r.productos_faltantes);
+        }
+    });
+}
+
 async function cargarInformeAgentes(id) {
     try {
         informeAgentesActual = await api.evaluaciones.informeAgentes(id);
         renderMetodologia();
         renderDictamenesAgentes();
+        marcarCoberturaParcialEnRanking();
     } catch (err) {
         const body = document.querySelector('#card-dictamenes-agentes .card-body');
         if (body) body.innerHTML = renderAlert({ type: 'danger', title: 'No se pudo obtener el informe agéntico', body: escapeHtml(err.message) });

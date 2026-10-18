@@ -366,12 +366,21 @@ function renderResultado() {
                                 <tr>
                                     <td>${escapeHtml(p.razon_social || '')}</td>
                                     <td>${Number(p.puntajes?.final ?? 0).toFixed(1)}</td>
-                                    <td>${p.recomendado ? '<span class="badge badge-success">Recomendado</span>' : ''}</td>
+                                    <td>
+                                        ${p.recomendado ? '<span class="badge badge-success">Recomendado</span>' : ''}
+                                        ${p.cobertura_completa === false ? badgeCoberturaParcial(p.cobertura_porcentaje, p.productos_faltantes) : ''}
+                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
                 </div>
+                ${ranking.some((p) => p.cobertura_completa === false) ? `
+                    <p class="text-muted mt-1" style="font-size:0.8rem;">
+                        Cobertura parcial: el proveedor no ofrece todos los productos solicitados. No puede ser
+                        el recomendado si otro proveedor cubre el pedido completo, aunque tenga más puntaje.
+                    </p>
+                ` : ''}
                 <p class="mt-1">${escapeHtml(resultadoActual.conclusion_ejecutiva || '')}</p>
                 <a class="btn btn-ghost btn-sm" href="evaluacion-detalle.html?id=${resultadoActual.evaluacion_id}">Ver detalle completo</a>
             </div>

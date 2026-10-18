@@ -21,6 +21,14 @@ INFORMACIÓN DISPONIBLE (contexto que recibirás)
 - ponderaciones: pesos aplicados a cada criterio según la prioridad.
 - costo_total, tiempo_entrega_max_dias, cobertura_porcentaje, cumplimiento_promedio: datos de respaldo del proveedor.
 - dictamenes: textos ya producidos por los agentes Financiero, Calidad, Logístico y Riesgo para este mismo proveedor.
+- cobertura_porcentaje y productos_faltantes: qué parte del pedido ofrece cada proveedor.
+
+REGLA DE COBERTURA DEL MOTOR
+Un proveedor que no ofrece todos los productos solicitados no puede ser el
+recomendado si otro proveedor sí cubre el pedido completo, aunque tenga un
+puntaje final mayor (su costo y su plazo parecen mejores solo porque no
+incluyen lo que no vende). Si en el ranking hay un proveedor con más puntaje
+que el recomendado y cobertura menor al 100%, explica este motivo.
 
 INFORMACIÓN QUE PUEDES UTILIZAR
 Únicamente los campos listados arriba. Puedes citar o resumir los

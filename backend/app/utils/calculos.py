@@ -135,7 +135,8 @@ def generar_explicacion_resultado(
     costo_total: float,
     tiempo_entrega_dias: int,
     cobertura_pct: float,
-    cumplimiento_pct: float
+    cumplimiento_pct: float,
+    excluido_por_cobertura: bool = False,
 ) -> str:
     """
     Genera una explicación analítica y transparente de por qué el proveedor obtuvo dicho puntaje y si es recomendado.
@@ -164,6 +165,12 @@ def generar_explicacion_resultado(
 
     if es_recomendado:
         justificacion = f"PROVEEDOR RECOMENDADO: {proveedor_nombre} destaca por ser la opción óptima integral: {', '.join(razones)}. {resumen}"
+    elif excluido_por_cobertura:
+        justificacion = (
+            f"No recomendable por cobertura parcial: {proveedor_nombre} no ofrece todos los productos "
+            f"solicitados (cubre el {cobertura_pct:g}%) y otro proveedor sí cubre el pedido completo. "
+            f"{resumen} Detalles: {', '.join(razones)}."
+        )
     else:
         justificacion = f"Opción alterna: {proveedor_nombre}. {resumen} Detalles: {', '.join(razones)}."
 
